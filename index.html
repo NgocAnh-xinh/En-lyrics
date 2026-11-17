@@ -140,16 +140,26 @@ html.float-open,html.float-open body{overflow:hidden}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;background:var(--surface)}
 .seg button{border:none;background:transparent;padding:6px 10px;border-radius:7px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;font-variant-numeric:tabular-nums}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.track{grid-column:1/-1;position:relative;height:30px;border-radius:7px;background:var(--surface-2);overflow:hidden}
+/* Seek slider: a rounded rail filled up to the playhead, lyric lines marked on it, and a round thumb to drag */
+.track{--thumb:20px;--p:0;grid-column:1/-1;position:relative;height:34px;touch-action:none}
+@media (pointer:coarse){.track{--thumb:26px;height:40px}}
+.rail{position:absolute;left:calc(var(--thumb) / 2);right:calc(var(--thumb) / 2);top:50%;height:8px;margin-top:-4px;border-radius:999px;background:var(--line);overflow:hidden;pointer-events:none}
 .blks{position:absolute;inset:0}
-.blk{position:absolute;top:5px;bottom:5px;background:var(--felt-soft);border-left:2px solid var(--felt);border-radius:2px}
-.blk.on{background:var(--felt)}
+.blk{position:absolute;top:0;bottom:0;background:var(--felt-soft);border-left:2px solid var(--felt)}
+.blk.on{background:var(--felt);opacity:.45}
+.fill{position:absolute;left:0;top:0;bottom:0;width:calc(var(--p) * 100%);background:var(--felt);border-radius:999px}
 .track input[type=range]{position:absolute;inset:0;width:100%;height:100%;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
-.track input[type=range]::-webkit-slider-runnable-track{height:30px;background:transparent}
-.track input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:3px;height:30px;background:var(--ink);border:none;border-radius:1px}
-.track input[type=range]::-moz-range-track{height:30px;background:transparent}
-.track input[type=range]::-moz-range-thumb{width:3px;height:30px;background:var(--ink);border:none;border-radius:1px}
+.track input[type=range]:focus{outline:none}
+.track input[type=range]::-webkit-slider-runnable-track{height:100%;background:transparent;border:none}
+.track input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:var(--thumb);height:var(--thumb);margin-top:calc((34px - var(--thumb)) / 2);border-radius:50%;background:var(--on-video);border:3px solid var(--felt);box-shadow:0 1px 5px rgba(0,0,0,.35);transition:transform .12s}
+@media (pointer:coarse){.track input[type=range]::-webkit-slider-thumb{margin-top:calc((40px - var(--thumb)) / 2)}}
+.track input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15)}
+.track input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px var(--felt-soft),0 1px 5px rgba(0,0,0,.35)}
+.track input[type=range]::-moz-range-track{height:100%;background:transparent;border:none}
+.track input[type=range]::-moz-range-thumb{width:var(--thumb);height:var(--thumb);box-sizing:border-box;border-radius:50%;background:var(--on-video);border:3px solid var(--felt);box-shadow:0 1px 5px rgba(0,0,0,.35)}
 .track input[type=range]:disabled{cursor:default}
+.track input[type=range]:disabled::-webkit-slider-thumb{opacity:0}
+.track input[type=range]:disabled::-moz-range-thumb{opacity:0}
 
 /* Tap zone */
 .tapzone{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:12px}
@@ -365,7 +375,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
           <button type="button" data-rate="1" aria-pressed="true">1×</button>
         </div>
         <div class="track" id="track">
-          <div class="blks" id="blks"></div>
+          <div class="rail"><div class="blks" id="blks"></div><div class="fill"></div></div>
           <input type="range" id="seek" min="0" max="1" step="any" value="0" aria-label="Vị trí phát" disabled>
         </div>
       </div>
@@ -899,7 +909,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     file: $('file'), fileBtn: $('fileBtn'), fname: $('fname'), steps: $('steps'),
     player: $('player'), video: $('video'), ovCanvas: $('ovCanvas'), drop: $('drop'),
     playBtn: $('playBtn'), icoPlay: $('icoPlay'), icoPause: $('icoPause'), clockNow: $('clockNow'), clockDur: $('clockDur'),
-    speed: $('speed'), blks: $('blks'), seek: $('seek'),
+    speed: $('speed'), blks: $('blks'), seek: $('seek'), track: $('track'),
     tapKey: $('tapKey'), keyEyebrow: $('keyEyebrow'), keyLine: $('keyLine'), keyNext: $('keyNext'),
     restBtn: $('restBtn'), undoBtn: $('undoBtn'),
     tabLyrics: $('tabLyrics'), tabCues: $('tabCues'), panelLyrics: $('panelLyrics'), panelCues: $('panelCues'), cueCount: $('cueCount'),
@@ -1445,6 +1455,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     }
     E.clockNow.textContent = tc(t);
     if (!scrubbing && hasVideo) E.seek.value = t;
+    const dur = duration();
+    E.track.style.setProperty('--p', dur ? Math.min(1, Math.max(0, t / dur)) : 0);
   }
   function loop(){ updateActive(); raf = E.video.paused ? 0 : requestAnimationFrame(loop); }
 
