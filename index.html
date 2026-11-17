@@ -28,6 +28,7 @@
   --ebony:#1D1E23; --ebony-ink:#F3F3F5;
   --video-bg:#0D0E11; --on-video:#FFFFFF; --on-video-muted:#B7BAC4;
   --ok:#2E7A4E; --ok-soft:#E3F2E8;
+  --raised:#FFFFFF; --raised-line:#C3C7D1; --scrim:rgba(16,17,22,.55);
   --font-ui:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius:14px;
@@ -40,6 +41,7 @@
     --ebony:#08090B; --ebony-ink:#F3F3F5;
     --video-bg:#050608; --on-video:#FFFFFF; --on-video-muted:#B7BAC4;
     --ok:#6BC18F; --ok-soft:#17301F;
+    --raised:#2B2D37; --raised-line:#474A57; --scrim:rgba(0,0,0,.66);
     color-scheme:dark;
   }
 }
@@ -50,6 +52,7 @@
   --ebony:#08090B; --ebony-ink:#F3F3F5;
   --video-bg:#050608; --on-video:#FFFFFF; --on-video-muted:#B7BAC4;
   --ok:#6BC18F; --ok-soft:#17301F;
+  --raised:#2B2D37; --raised-line:#474A57; --scrim:rgba(0,0,0,.66);
   color-scheme:dark;
 }
 
@@ -97,9 +100,15 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.
 .dock{display:flex;flex-direction:column;gap:12px;min-width:0}
 @media (max-width:900px){.work{grid-template-columns:minmax(0,1fr)}}
 /* "Xem thử" while the player is scrolled away: the player floats over the top of the screen until closed. */
-.dock.floating{position:fixed;z-index:30;top:calc(env(safe-area-inset-top,0px) + 8px);left:0;right:0;margin:0 auto;width:min(560px,calc(100vw - 16px));padding:10px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.28)}
-.dock.floating .player{max-height:min(40vh,420px)}
-.float-close{align-self:stretch}
+.dock.floating{position:fixed;z-index:30;top:calc(env(safe-area-inset-top,0px) + 10px);left:0;right:0;margin:0 auto;width:min(560px,calc(100vw - 16px));padding:10px 10px 12px;border-radius:18px;background:var(--raised);border:1px solid var(--raised-line);box-shadow:0 24px 64px rgba(0,0,0,.5);overscroll-behavior:contain}
+.dock.floating .player{max-height:min(46vh,460px)}
+.float-scrim{position:fixed;inset:0;z-index:29;background:var(--scrim);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);touch-action:none}
+html.float-open,html.float-open body{overflow:hidden}
+.float-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 2px 0 4px}
+.float-title{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--ink)}
+.float-title i{width:8px;height:8px;border-radius:50%;background:var(--felt);box-shadow:0 0 0 4px var(--felt-soft)}
+.float-x{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:6px 14px 6px 16px;border-radius:999px;border:none;background:var(--ink);color:var(--bg);font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.float-x svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round}
 
 /* Player */
 .player{position:relative;width:100%;aspect-ratio:var(--ar,9/16);max-height:clamp(280px,56vh,620px);background:var(--video-bg);border-radius:var(--radius);overflow:hidden}
@@ -178,6 +187,17 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.
 .lyr-head label{flex:1;min-width:0}
 .lyr-head .btn{flex:none}
 .btn.small{min-height:34px;padding:5px 12px;font-size:13px}
+/* ⓘ: explanations stay folded until asked for */
+.info{position:relative;display:inline-grid;place-items:center;width:26px;height:26px;margin:-4px 0 -4px 4px;padding:0;border:none;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;vertical-align:middle;flex:none}
+.info::before{content:"";position:absolute;inset:-9px}
+.info svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.info svg .dot{fill:currentColor;stroke:none}
+.info:hover{color:var(--ink)}
+.info[aria-expanded="true"]{color:var(--felt)}
+.tip{margin:0;padding:10px 12px;border-radius:10px;background:var(--surface-2);color:var(--ink);font-size:13px;line-height:1.55;max-width:none}
+.lbl{display:inline-flex;align-items:center;min-width:0}
+.row-i{display:flex;align-items:center;gap:6px}
+.row-i > .btn:first-child{flex:1}
 #lyrics{width:100%;min-height:300px;resize:vertical;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px;line-height:1.7}
 .hint{margin:0;color:var(--muted);font-size:13px;max-width:65ch}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
@@ -187,8 +207,9 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.
 .step{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:700;color:var(--ink)}
 .note{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--felt-soft);color:var(--ink);font-size:13.5px}
 .note .btn{min-height:34px;padding:5px 12px;font-size:13px}
-.cues{position:relative;list-style:none;margin:0;padding:0;max-height:min(58vh,560px);overflow:auto;border-top:1px solid var(--line)}
-@media (max-width:900px){.cues{max-height:none}}
+.cues{position:relative;list-style:none;margin:0;padding:0;max-height:min(58vh,560px);overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.cues > li:last-child{border-bottom:none}
+@media (max-width:900px){.cues{max-height:60vh;max-height:min(60dvh,540px)}}
 .cue{display:grid;grid-template-columns:2.6ch auto auto minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:8px 6px;border-bottom:1px solid var(--line)}
 .cue.is-next{box-shadow:inset 3px 0 0 var(--felt)}
 .cue.is-active{background:var(--felt-soft)}
@@ -223,6 +244,7 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.
 .ce-acts{display:flex;flex-wrap:wrap;gap:8px}
 .ce-acts .btn{min-height:36px;padding:6px 12px;font-size:13px}
 .cue-edit .hint{font-size:12px}
+.cue-edit .tip{background:var(--surface)}
 @media (max-width:560px){
   .cue{grid-template-columns:2.6ch auto auto minmax(0,1fr)}
   .cue-text{grid-column:2/-1}
@@ -232,7 +254,7 @@ h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.
 
 /* Export */
 .export{padding:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
-.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-content;max-width:100%}
 #srtOut{width:100%;min-height:180px;margin-top:8px;font-family:var(--font-mono);font-size:12px;line-height:1.5;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical}
 
@@ -313,6 +335,10 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
   <main class="work" id="work">
     <section class="stage" aria-label="Video và phím gõ">
       <div class="dock" id="dock">
+      <div class="float-bar" id="floatBar" hidden>
+        <span class="float-title"><i aria-hidden="true"></i>Đang xem thử</span>
+        <button class="float-x" id="closeFloat" type="button" aria-label="Đóng khung xem">Đóng<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
       <div class="player" id="player">
         <video id="video" playsinline preload="metadata"></video>
         <canvas id="vxCanvas" aria-hidden="true"></canvas>
@@ -343,7 +369,6 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
           <input type="range" id="seek" min="0" max="1" step="any" value="0" aria-label="Vị trí phát" disabled>
         </div>
       </div>
-      <button class="btn float-close" id="closeFloat" type="button" hidden>Đóng khung xem</button>
       </div>
 
       <div class="tapzone">
@@ -376,9 +401,10 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
 
       <div class="panel" id="panelLyrics" role="tabpanel" aria-labelledby="tabLyrics" hidden>
         <div class="lyr-head">
-          <label for="lyrics">Dán lời bài hát, mỗi dòng là một câu</label>
+          <span class="lbl"><label for="lyrics">Dán lời bài hát, mỗi dòng là một câu</label><button class="info" type="button" aria-expanded="false" aria-controls="lyricsTip" aria-label="Giải thích: cách dán lời"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
           <button class="btn ghost small" id="clearLyricsBtn" type="button">Xoá hết</button>
         </div>
+        <p class="tip" id="lyricsTip" hidden>Dòng trống dùng để ngăn đoạn. Chế độ 2 dòng ghép từng cặp dòng trong một đoạn, hợp với lời kèm bản dịch. Lời có sẵn mốc thời gian kiểu LRC như <code>[00:12.30]</code> sẽ tự điền giờ. Sửa chữ xong bấm lại "Tạo danh sách câu", thời gian đã gõ được giữ theo thứ tự câu.</p>
         <textarea id="lyrics" spellcheck="false"></textarea>
         <div class="row">
           <div class="seg" id="groupSeg" role="group" aria-label="Số dòng hiện cùng lúc">
@@ -387,7 +413,6 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
           </div>
           <button class="btn primary" id="applyBtn" type="button">Tạo danh sách câu</button>
         </div>
-        <p class="hint">Dòng trống dùng để ngăn đoạn. Chế độ 2 dòng ghép từng cặp dòng trong một đoạn, hợp với lời kèm bản dịch. Lời có sẵn mốc thời gian kiểu LRC như <code>[00:12.30]</code> sẽ tự điền giờ. Sửa chữ xong bấm lại "Tạo danh sách câu", thời gian đã gõ được giữ theo thứ tự câu.</p>
       </div>
 
       <div class="panel" id="panelCues" role="tabpanel" aria-labelledby="tabCues">
@@ -397,13 +422,14 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
         </div>
         <div class="cue-tools">
           <div class="offset">
-            <span>Bù trễ phản xạ</span>
+            <span class="lbl">Bù trễ phản xạ<button class="info" type="button" aria-expanded="false" aria-controls="offsetTip" aria-label="Giải thích: bù trễ phản xạ"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
             <button class="step" id="offMinus" type="button" aria-label="Hiện lời sớm hơn 0,05 giây">−</button>
             <output id="offVal">−0,15 s</output>
             <button class="step" id="offPlus" type="button" aria-label="Hiện lời muộn hơn 0,05 giây">+</button>
           </div>
           <button class="btn ghost" id="clearBtn" type="button">Xoá hết thời gian</button>
         </div>
+        <p class="tip" id="offsetTip" hidden>Tay luôn gõ chậm hơn lúc câu bắt đầu khoảng 0,15–0,25 giây. Số âm làm mọi câu hiện sớm lên để bù lại. Lời hiện trễ thì bấm −, hiện sớm quá thì bấm +. Đổi số này không làm mất thời gian đã gõ. Chỉ lệch vài câu thì chỉnh ±0,1 ở từng câu.</p>
         <ol class="cues" id="cues"></ol>
       </div>
 
@@ -411,14 +437,15 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
         <div class="btns">
           <button class="btn primary" id="dlBtn" type="button">Tải file .srt</button>
           <button class="btn" id="copyBtn" type="button">Sao chép SRT</button>
+          <span id="dlInfo"><button class="info" type="button" aria-expanded="false" aria-controls="dlHint" aria-label="Giải thích: dùng file .srt"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
         </div>
-        <p class="hint" id="dlHint">Tệp tải về là .zip chứa sẵn file .srt. Giải nén, rồi trong CapCut trên máy tính chọn Captions → Add Captions → Import file.</p>
+        <p class="tip" id="dlHint" hidden>Tệp tải về là .zip chứa sẵn file .srt. Giải nén, rồi trong CapCut trên máy tính chọn Captions → Add Captions → Import file.</p>
         <p class="hint" id="dlNote" hidden>Trang này không tải tệp trực tiếp được ở đây. Bấm "Sao chép SRT", dán vào Notepad và lưu thành tên-bài.srt (mã hoá UTF-8).</p>
         <details id="srtDetails"><summary>Xem nội dung SRT</summary><textarea id="srtOut" readonly aria-label="Nội dung file SRT"></textarea></details>
 
         <div class="vexport" id="vexport">
-          <h3>Xuất video có sẵn lời</h3>
-          <p class="hint">Dùng khi làm trên điện thoại: lời được in thẳng vào video, không cần CapCut. Khung video phía trên hiện đúng kiểu chữ và hiệu ứng sẽ xuất; bấm phát để xem thử. Đây là kiểu chung cho mọi câu; muốn chỉnh riêng câu nào, bấm "Kiểu" ở câu đó trong thẻ Thời gian.</p>
+          <h3 class="lbl">Xuất video có sẵn lời<button class="info" type="button" aria-expanded="false" aria-controls="vxTip" aria-label="Giải thích: xuất video có lời"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></h3>
+          <p class="tip" id="vxTip" hidden>Dùng khi làm trên điện thoại: lời được in thẳng vào video, không cần CapCut. Khung video phía trên hiện đúng kiểu chữ và hiệu ứng sẽ xuất; bấm phát để xem thử. Đây là kiểu chung cho mọi câu; muốn chỉnh riêng câu nào, bấm "Kiểu" ở câu đó trong thẻ Thời gian.</p>
           <div class="presets" id="presets">
             <button class="preset" type="button" data-preset="en1"><b>Mẫu 1: chữ mảnh</b><small>Lời nét mảnh phía trên, tiêu đề thư pháp hiện dần</small></button>
             <button class="preset" type="button" data-preset="en2"><b>Mẫu 2: chữ thư pháp</b><small>Lời viết tay sát mép trên, mờ dần từng câu</small></button>
@@ -439,13 +466,14 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
             <div class="opt wide"><span>Tiêu đề đầu video</span>
               <input type="text" id="titleIn" class="text-in" maxlength="120" placeholder="Ví dụ: Mưa xa nhau - Emily (để trống nếu không cần)" aria-label="Tiêu đề đầu video">
               <div class="seg" data-opt="titleDur" role="group" aria-label="Thời gian hiện tiêu đề"><button type="button" data-v="3">Hiện 3 giây</button><button type="button" data-v="5">5 giây</button><button type="button" data-v="8">8 giây</button></div></div>
-            <div class="opt wide"><span>Chất lượng xuất</span>
+            <div class="opt wide"><span class="lbl">Chất lượng xuất<button class="info" type="button" aria-expanded="false" aria-controls="qualityInfo" aria-label="Giải thích: chất lượng xuất"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
               <div class="seg" data-opt="quality" role="group" aria-label="Chất lượng xuất"><button type="button" data-v="std">Tiêu chuẩn</button><button type="button" data-v="high">Cao</button></div>
-              <p class="hint" id="qualityInfo"></p></div>
+              <p class="tip" id="qualityInfo" hidden></p></div>
           </div>
           <div class="btns">
             <button class="btn" id="vxTry" type="button">Xem thử</button>
             <button class="btn primary" id="vxBtn" type="button">Xuất video có lời</button>
+            <span id="vxInfo" hidden><button class="info" type="button" aria-expanded="false" aria-controls="vxNote" aria-label="Giải thích: cách xuất video"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
           </div>
           <div class="vx-prog" id="vxProg" hidden>
             <div class="bar"><i id="vxBar"></i></div>
@@ -455,9 +483,9 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
           <div class="vx-result" id="vxResult" hidden>
             <video id="vxVideo" controls playsinline></video>
             <p class="hint" id="vxResumeNote" hidden></p>
-            <button class="btn primary" id="vxSave" type="button">Lưu video</button>
+            <div class="row-i"><button class="btn primary" id="vxSave" type="button">Lưu video</button><button class="info" type="button" aria-expanded="false" aria-controls="vxSaveHint" aria-label="Giải thích: lưu video"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></div>
             <p class="save-status" id="vxSaveStatus" role="status" aria-live="polite" hidden></p>
-            <p class="hint" id="vxSaveHint">Trên iPhone, chọn "Lưu video" trong bảng chia sẻ để đưa video vào ứng dụng Ảnh.</p>
+            <p class="tip" id="vxSaveHint" hidden>Trên iPhone, chọn "Lưu video" trong bảng chia sẻ để đưa video vào ứng dụng Ảnh.</p>
           </div>
           <p class="hint" id="vxNote">Video chạy hết một lượt trong lúc xuất: bài 4 phút mất khoảng 4 phút. Giữ màn hình sáng và đừng chuyển sang ứng dụng khác.</p>
         </div>
@@ -877,10 +905,10 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     tabLyrics: $('tabLyrics'), tabCues: $('tabCues'), panelLyrics: $('panelLyrics'), panelCues: $('panelCues'), cueCount: $('cueCount'),
     lyrics: $('lyrics'), groupSeg: $('groupSeg'), applyBtn: $('applyBtn'), clearLyricsBtn: $('clearLyricsBtn'),
     sampleNote: $('sampleNote'), pasteBtn: $('pasteBtn'), offMinus: $('offMinus'), offPlus: $('offPlus'), offVal: $('offVal'), clearBtn: $('clearBtn'),
-    cues: $('cues'), dlBtn: $('dlBtn'), copyBtn: $('copyBtn'), dlHint: $('dlHint'), dlNote: $('dlNote'), srtDetails: $('srtDetails'), srtOut: $('srtOut'),
+    cues: $('cues'), dlBtn: $('dlBtn'), copyBtn: $('copyBtn'), dlHint: $('dlHint'), dlInfo: $('dlInfo'), dlNote: $('dlNote'), srtDetails: $('srtDetails'), srtOut: $('srtOut'),
     dropKb: $('dropKb'), dropTitle: $('dropTitle'), dropTap: $('dropTap'), dropPick: $('dropPick'), dropNote: $('dropNote'), dropDetail: $('dropDetail'),
     vxCanvas: $('vxCanvas'), opts: $('opts'), presets: $('presets'), titleIn: $('titleIn'),
-    dock: $('dock'), closeFloat: $('closeFloat'), vxTry: $('vxTry'), vxBtn: $('vxBtn'), vxProg: $('vxProg'), vxBar: $('vxBar'), vxText: $('vxText'),
+    dock: $('dock'), closeFloat: $('closeFloat'), floatBar: $('floatBar'), vxTry: $('vxTry'), vxBtn: $('vxBtn'), vxProg: $('vxProg'), vxBar: $('vxBar'), vxText: $('vxText'),
     vxCancel: $('vxCancel'), vxResult: $('vxResult'), vxVideo: $('vxVideo'), vxSave: $('vxSave'), vxSaveStatus: $('vxSaveStatus'), vxNote: $('vxNote'),
     saveState: $('saveState'), vxResumeNote: $('vxResumeNote'),
     toast: $('toast')
@@ -908,6 +936,15 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   const clampOff = v => (typeof v === 'number' && isFinite(v)) ? Math.max(-1, Math.min(1, v)) : -0.15;
   const duration = () => { const d = E.video.duration; return hasVideo && isFinite(d) && d > 0 ? d : null; };
 
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button.info');
+    if (!b) return;
+    const tip = document.getElementById(b.getAttribute('aria-controls'));
+    if (!tip) return;
+    const open = tip.hidden;
+    tip.hidden = !open;
+    b.setAttribute('aria-expanded', String(open));
+  });
   function toast(msg){
     E.toast.textContent = msg; E.toast.hidden = false;
     clearTimeout(toastT); toastT = setTimeout(() => { E.toast.hidden = true; }, 3800);
@@ -1130,7 +1167,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   if (standalone){
     E.dlHint.textContent = 'Trong CapCut trên máy tính chọn Captions → Add Captions → Import file, rồi chọn file .srt vừa tải.';
   } else {
-    dlP.then(d => { if (!d){ E.dlBtn.hidden = true; E.dlHint.hidden = true; E.dlNote.hidden = false; } });
+    dlP.then(d => { if (!d){ E.dlBtn.hidden = true; E.dlHint.hidden = true; E.dlInfo.hidden = true; E.dlNote.hidden = false; } });
   }
   function plainDownload(name, data){
     const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: 'application/x-subrip' }));
@@ -1245,7 +1282,10 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   function buildEditor(i){
     const c = S.cues[i], own = c.st || {};
     const li = mk('li', 'cue-edit'); li.dataset.i = i;
-    li.append(mk('p', 'ce-head', 'Kiểu riêng cho câu ' + (i + 1) + '. "Chung" là theo kiểu chung ở phần Xuất video có sẵn lời.'));
+    const head = mk('p', 'ce-head lbl', 'Kiểu riêng cho câu ' + (i + 1));
+    head.insertAdjacentHTML('beforeend', '<button class="info" type="button" aria-expanded="false" aria-controls="ceTip" aria-label="Giải thích: kiểu riêng"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button>');
+    li.append(head, mk('p', 'tip', '"Chung" là theo kiểu chung ở phần Xuất video có sẵn lời. Chọn một giá trị khác để câu này dùng kiểu riêng.'));
+    li.lastChild.id = 'ceTip'; li.lastChild.hidden = true;
     const grid = mk('div', 'ce-grid');
     for (const [key, label, opts] of CUE_OPTS){
       const isColor = key === 'color';
@@ -1848,7 +1888,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   });
   E.vxTry.addEventListener('click', previewPlay);
   // Floating preview: only when the player is mostly off screen; a placeholder keeps the page from jumping.
-  let floatPh = null;
+  let floatPh = null, floatScrim = null;
   function playerMostlyVisible(){
     const r = E.player.getBoundingClientRect();
     const seen = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0);
@@ -1859,18 +1899,27 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     floatPh = document.createElement('div');
     floatPh.style.height = E.dock.offsetHeight + 'px';
     E.dock.parentNode.insertBefore(floatPh, E.dock);
+    if (!floatScrim){
+      floatScrim = document.createElement('div'); floatScrim.className = 'float-scrim';
+      floatScrim.addEventListener('click', closeFloating);
+    }
+    document.body.appendChild(floatScrim);
+    document.documentElement.classList.add('float-open');
     E.dock.classList.add('floating');
-    E.closeFloat.hidden = false;
+    E.floatBar.hidden = false;
     layoutOverlay();
   }
   function unfloat(){
     if (!E.dock.classList.contains('floating')) return;
     E.dock.classList.remove('floating');
-    E.closeFloat.hidden = true;
+    E.floatBar.hidden = true;
+    if (floatScrim) floatScrim.remove();
+    document.documentElement.classList.remove('float-open');
     if (floatPh){ floatPh.remove(); floatPh = null; }
     layoutOverlay();
   }
-  E.closeFloat.addEventListener('click', () => { E.video.pause(); unfloat(); });
+  function closeFloating(){ E.video.pause(); unfloat(); }
+  E.closeFloat.addEventListener('click', closeFloating);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') unfloat(); });
   E.presets.addEventListener('click', e => {
     const b = e.target.closest('button[data-preset]');
@@ -2008,7 +2057,9 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     }
     return mbPromise;
   }
+  // The speed note is a warning on the slow path (keep the screen on), so it stays visible there.
   if (fastCapable()){
+    E.vxNote.hidden = true; E.vxNote.className = 'tip'; $('vxInfo').hidden = false;
     E.vxNote.textContent = 'Máy này hỗ trợ xuất nhanh: không cần chờ video chạy hết một lượt, âm thanh gốc được giữ nguyên. Nếu xuất nhanh không chạy được, công cụ tự chuyển sang cách thường (bài 4 phút mất khoảng 4 phút).';
   }
   // Returns { blob, secs } or null when this device/file can't take the fast path.
@@ -2232,9 +2283,33 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     const name = baseName() + '-co-loi.' + lastExport.ext;
     const size = Math.max(1, Math.round(lastExport.blob.size / 1048576)) + ' MB';
     if (standalone){
-      // On a normal website the share sheet is the shortest way into Photos on iPhone.
+      const mobile = isIOS || /Android/i.test(navigator.userAgent);
+      const mime = lastExport.blob.type || (lastExport.ext === 'mp4' ? 'video/mp4' : 'video/webm');
+      // Computer with Chrome or Edge: a real "Save as" box, so the person picks the folder and the write is confirmed.
+      if (!mobile && window.showSaveFilePicker){
+        let handle = null;
+        try {
+          handle = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Video', accept: { [mime.split(';')[0]]: ['.' + lastExport.ext] } }] });
+        } catch (e){
+          if (e && e.name === 'AbortError'){ saveStatus('info', 'Chưa lưu video.', ' Bạn đã đóng hộp Lưu. Bấm "Lưu video" để chọn lại nơi lưu.'); return; }
+        }
+        if (handle){
+          try {
+            const w = await handle.createWritable();
+            await w.write(lastExport.blob); await w.close();
+          } catch (e){
+            saveStatus('err', 'Không ghi được video vào thư mục đã chọn.', ' Ổ đĩa có thể đã đầy hoặc thư mục không cho ghi. Bấm "Lưu video" và chọn chỗ khác.');
+            return;
+          }
+          exportSaved();
+          saveStatus('ok', 'Đã lưu video lúc ' + clockNow() + '.', ' Tệp ' + handle.name + ' (' + size + ') nằm trong thư mục bạn vừa chọn ở hộp Lưu.');
+          toast('Đã lưu video.');
+          return;
+        }
+      }
+      // Phone: the share sheet is the shortest way into Photos.
       let file = null;
-      try { file = new File([lastExport.blob], name, { type: lastExport.blob.type || 'video/mp4' }); } catch (e) {}
+      if (mobile){ try { file = new File([lastExport.blob], name, { type: mime }); } catch (e) {} }
       if (file && navigator.canShare && navigator.canShare({ files: [file] })){
         try {
           await navigator.share({ files: [file] });
@@ -2257,7 +2332,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
       exportSaved();
       saveStatus('ok', 'Đã gửi lệnh tải video lúc ' + clockNow() + ' (' + size + ').', isIOS
         ? ' Nếu Safari hỏi thì chọn Tải về. Video nằm trong app Tệp, mục Tải về; mở video rồi bấm Chia sẻ → Lưu video để đưa vào app Ảnh.'
-        : ' Video nằm trong thư mục Tải xuống của trình duyệt, tên ' + name + '.');
+        : ' Video nằm trong thư mục Tải xuống (Downloads) của máy, tên ' + name + '. Mở danh sách tải xuống của trình duyệt để xem.');
       toast('Đã gửi lệnh tải video.');
       return;
     }
