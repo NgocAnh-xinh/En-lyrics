@@ -27,7 +27,7 @@
   --key-face:#FBFAF6; --key-shade:#E4DFD3; --key-edge:#CFC9BB; --key-ink:#1C1C21; --key-muted:#6A6658;
   --ebony:#1D1E23; --ebony-ink:#F3F3F5;
   --video-bg:#0D0E11; --on-video:#FFFFFF; --on-video-muted:#B7BAC4;
-  --ok:#2E7A4E;
+  --ok:#2E7A4E; --ok-soft:#E3F2E8;
   --font-ui:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius:14px;
@@ -39,7 +39,7 @@
     --key-face:#E9E6DE; --key-shade:#CCC6B8; --key-edge:#A8A293; --key-ink:#1C1C21; --key-muted:#5E5A4E;
     --ebony:#08090B; --ebony-ink:#F3F3F5;
     --video-bg:#050608; --on-video:#FFFFFF; --on-video-muted:#B7BAC4;
-    --ok:#6BC18F;
+    --ok:#6BC18F; --ok-soft:#17301F;
     color-scheme:dark;
   }
 }
@@ -49,7 +49,7 @@
   --key-face:#E9E6DE; --key-shade:#CCC6B8; --key-edge:#A8A293; --key-ink:#1C1C21; --key-muted:#5E5A4E;
   --ebony:#08090B; --ebony-ink:#F3F3F5;
   --video-bg:#050608; --on-video:#FFFFFF; --on-video-muted:#B7BAC4;
-  --ok:#6BC18F;
+  --ok:#6BC18F; --ok-soft:#17301F;
   color-scheme:dark;
 }
 
@@ -273,6 +273,10 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
 .bar i{display:block;height:100%;width:0;background:var(--felt);transition:width .2s linear}
 .vx-prog span{flex:1;font-family:var(--font-mono);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .vx-result{display:flex;flex-direction:column;gap:10px}
+.save-status{margin:0;padding:10px 12px;border-radius:10px;border-left:4px solid var(--muted);background:var(--surface-2);color:var(--ink);font-size:13.5px;line-height:1.5}
+.save-status b{display:block;font-weight:700;margin-bottom:2px}
+.save-status.ok{background:var(--ok-soft);border-left-color:var(--ok)}
+.save-status.err{background:var(--felt-soft);border-left-color:var(--felt)}
 .vx-result video{width:100%;max-height:380px;background:var(--video-bg);border-radius:10px}
 .exporting .tapzone,.exporting .transport,.exporting .cues,.exporting .cue-tools,.exporting .tabs,.exporting .btns,.exporting .opts,.exporting .top-act,.exporting .keys-help{pointer-events:none;opacity:.45}
 
@@ -452,6 +456,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
             <video id="vxVideo" controls playsinline></video>
             <p class="hint" id="vxResumeNote" hidden></p>
             <button class="btn primary" id="vxSave" type="button">Lưu video</button>
+            <p class="save-status" id="vxSaveStatus" role="status" aria-live="polite" hidden></p>
             <p class="hint" id="vxSaveHint">Trên iPhone, chọn "Lưu video" trong bảng chia sẻ để đưa video vào ứng dụng Ảnh.</p>
           </div>
           <p class="hint" id="vxNote">Video chạy hết một lượt trong lúc xuất: bài 4 phút mất khoảng 4 phút. Giữ màn hình sáng và đừng chuyển sang ứng dụng khác.</p>
@@ -876,7 +881,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     dropKb: $('dropKb'), dropTitle: $('dropTitle'), dropTap: $('dropTap'), dropPick: $('dropPick'), dropNote: $('dropNote'), dropDetail: $('dropDetail'),
     vxCanvas: $('vxCanvas'), opts: $('opts'), presets: $('presets'), titleIn: $('titleIn'),
     dock: $('dock'), closeFloat: $('closeFloat'), vxTry: $('vxTry'), vxBtn: $('vxBtn'), vxProg: $('vxProg'), vxBar: $('vxBar'), vxText: $('vxText'),
-    vxCancel: $('vxCancel'), vxResult: $('vxResult'), vxVideo: $('vxVideo'), vxSave: $('vxSave'), vxNote: $('vxNote'),
+    vxCancel: $('vxCancel'), vxResult: $('vxResult'), vxVideo: $('vxVideo'), vxSave: $('vxSave'), vxSaveStatus: $('vxSaveStatus'), vxNote: $('vxNote'),
     saveState: $('saveState'), vxResumeNote: $('vxResumeNote'),
     toast: $('toast')
   };
@@ -2089,6 +2094,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     E.vxVideo.preload = restoredAt ? 'none' : 'metadata';   // a reopened export loads only when played
     E.vxVideo.src = lastExport.url;
     E.vxResult.hidden = false;
+    E.vxSaveStatus.hidden = true;
     if (restoredAt){
       const d = new Date(restoredAt);
       E.vxResumeNote.textContent = 'Video xuất lúc ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ' ngày ' + d.getDate() + '/' + (d.getMonth() + 1) + ' chưa được lưu. Bấm "Lưu video" để lưu, hoặc xuất lại nếu bạn đã sửa lời.';
@@ -2200,28 +2206,74 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   }
   // Once the video is in the person's hands, the kept copy is no longer needed.
   function exportSaved(){ idbDel('export'); E.vxResumeNote.hidden = true; }
+  // The result of a save stays written under the button, so it can't be missed like a toast.
+  function saveStatus(kind, title, detail){
+    const el = E.vxSaveStatus;
+    el.className = 'save-status ' + kind;
+    el.replaceChildren();
+    const b = document.createElement('b'); b.textContent = title;
+    el.append(b);
+    if (detail) el.append(document.createTextNode(detail));
+    el.hidden = false;
+    try { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+  }
+  const clockNow = () => { const d = new Date(); return p2(d.getHours()) + ':' + p2(d.getMinutes()); };
+  let saving = false;
   async function saveExport(){
-    if (!lastExport) return;
+    if (!lastExport || saving) return;
+    saving = true;
+    const label = E.vxSave.textContent;
+    E.vxSave.disabled = true; E.vxSave.textContent = 'Đang mở hộp lưu…';
+    try { await saveExportNow(); }
+    catch (e){ saveStatus('err', 'Không lưu được video.', ' Có lỗi bất ngờ (' + ((e && (e.message || e.name)) || 'không rõ') + '). Bấm "Lưu video" để thử lại.'); }
+    finally { saving = false; E.vxSave.disabled = false; E.vxSave.textContent = label; }
+  }
+  async function saveExportNow(){
     const name = baseName() + '-co-loi.' + lastExport.ext;
+    const size = Math.max(1, Math.round(lastExport.blob.size / 1048576)) + ' MB';
     if (standalone){
       // On a normal website the share sheet is the shortest way into Photos on iPhone.
       let file = null;
       try { file = new File([lastExport.blob], name, { type: lastExport.blob.type || 'video/mp4' }); } catch (e) {}
       if (file && navigator.canShare && navigator.canShare({ files: [file] })){
-        try { await navigator.share({ files: [file] }); exportSaved(); return; }
-        catch (e){ if (e && e.name === 'AbortError') return; }
+        try {
+          await navigator.share({ files: [file] });
+          exportSaved();
+          saveStatus('ok', 'Đã lưu video lúc ' + clockNow() + '.', isIOS
+            ? ' Nếu bạn chọn "Lưu video" trong bảng chia sẻ, video nằm trong app Ảnh, mục Gần đây (' + size + ').'
+            : ' Video đã được chuyển tới nơi bạn chọn trong bảng chia sẻ (' + size + ').');
+          toast('Đã lưu video.');
+          return;
+        } catch (e){
+          if (e && e.name === 'AbortError'){
+            saveStatus('info', 'Chưa lưu video.', ' Bảng chia sẻ đã đóng mà chưa chọn nơi lưu. Bấm "Lưu video" rồi chọn "Lưu video" để đưa vào app Ảnh. Nếu bạn vừa lưu xong, hãy kiểm tra app Ảnh.');
+            return;
+          }
+          // Any other refusal: fall back to a plain download below.
+        }
       }
-      plainDownload(name, lastExport.blob); exportSaved(); toast('Đã tải ' + name + '.'); return;
+      try { plainDownload(name, lastExport.blob); }
+      catch (e){ saveStatus('err', 'Không lưu được video.', ' Trình duyệt chặn việc tải tệp. Thử mở link bằng Safari hoặc Chrome rồi lưu lại.'); return; }
+      exportSaved();
+      saveStatus('ok', 'Đã gửi lệnh tải video lúc ' + clockNow() + ' (' + size + ').', isIOS
+        ? ' Nếu Safari hỏi thì chọn Tải về. Video nằm trong app Tệp, mục Tải về; mở video rồi bấm Chia sẻ → Lưu video để đưa vào app Ảnh.'
+        : ' Video nằm trong thư mục Tải xuống của trình duyệt, tên ' + name + '.');
+      toast('Đã gửi lệnh tải video.');
+      return;
     }
     const d = await dlP;
-    if (!d){ toast('Ở đây không lưu tệp được. Mở link công cụ bằng Safari, hoặc dùng bản file .html.'); return; }
-    try { await d.save({ filename: name, data: lastExport.blob }); exportSaved(); toast('Đã lưu video.'); }
-    catch (err){
+    if (!d){ saveStatus('err', 'Không lưu được video ở đây.', ' Chế độ xem này không cho tải tệp. Mở công cụ bằng thẻ trong cuộc trò chuyện, hoặc dùng bản web trên GitHub bằng Safari.'); return; }
+    try {
+      await d.save({ filename: name, data: lastExport.blob });
+      exportSaved();
+      saveStatus('ok', 'Đã lưu video lúc ' + clockNow() + '.', ' Tên tệp: ' + name + ' (' + size + ').');
+      toast('Đã lưu video.');
+    } catch (err){
       const code = err && err.code;
-      if (code === 'declined') return;
-      if (code === 'rate_limited'){ toast('Đang có một hộp thoại lưu mở. Chờ chút rồi thử lại.'); return; }
-      if (code === 'too_large'){ toast('Video quá lớn để lưu ở đây. Thử mở link công cụ bằng Safari.'); return; }
-      toast('Không lưu được video. Thử lại, hoặc mở link công cụ bằng Safari.');
+      if (code === 'declined'){ saveStatus('info', 'Chưa lưu video.', ' Bạn đã bấm huỷ ở hộp lưu. Bấm "Lưu video" để thử lại.'); return; }
+      if (code === 'rate_limited'){ saveStatus('err', 'Chưa lưu được video.', ' Đang có một hộp lưu khác mở. Đóng hộp đó, chờ vài giây rồi thử lại.'); return; }
+      if (code === 'too_large'){ saveStatus('err', 'Video quá lớn để lưu ở đây (' + size + ').', ' Hãy mở bản web trên GitHub bằng Safari để lưu, hoặc xuất lại ở chất lượng Tiêu chuẩn.'); return; }
+      saveStatus('err', 'Không lưu được video.', ' Thử lại một lần nữa; nếu vẫn lỗi, mở bản web trên GitHub bằng Safari.' + (code ? ' (Mã lỗi: ' + code + ')' : ''));
     }
   }
   E.vxBtn.addEventListener('click', startExport);
