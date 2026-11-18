@@ -148,6 +148,14 @@ html.float-open,html.float-open body{overflow:hidden}
 .blk{position:absolute;top:0;bottom:0;background:var(--felt-soft);border-left:2px solid var(--felt)}
 .blk.on{background:var(--felt);opacity:.45}
 .fill{position:absolute;left:0;top:0;bottom:0;width:calc(var(--p) * 100%);background:var(--felt);border-radius:999px}
+/* one mark where each lyric line starts, drawn over the played part too */
+.ticks{position:absolute;left:calc(var(--thumb) / 2);right:calc(var(--thumb) / 2);top:50%;height:0;pointer-events:none}
+.tick{position:absolute;top:-9px;width:2px;height:18px;margin-left:-1px;border-radius:1px;background:var(--ink);opacity:.6;box-shadow:0 0 0 1px var(--surface)}
+.tick.on{top:-12px;height:24px;width:3px;margin-left:-1.5px;background:var(--felt);opacity:1}
+.tick.rest{opacity:.3;height:10px;top:-5px}
+@media (pointer:coarse){.tick{top:-10px;height:20px}.tick.on{top:-13px;height:26px}}
+.seek-tip{position:absolute;bottom:100%;left:0;margin-bottom:4px;transform:translateX(-50%);max-width:min(280px,82vw);padding:6px 10px;border-radius:8px;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;z-index:3;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.seek-tip b{font-weight:700;margin-right:6px}
 .track input[type=range]{position:absolute;inset:0;width:100%;height:100%;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
 .track input[type=range]:focus{outline:none}
 .track input[type=range]::-webkit-slider-runnable-track{height:100%;background:transparent;border:none}
@@ -217,6 +225,12 @@ html.float-open,html.float-open body{overflow:hidden}
 .step{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:700;color:var(--ink)}
 .note{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--felt-soft);color:var(--ink);font-size:13.5px}
 .note .btn{min-height:34px;padding:5px 12px;font-size:13px}
+.reset-box{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--felt);box-shadow:0 0 0 4px var(--felt-soft);font-size:14px}
+.reset-box p{margin:0;line-height:1.55}
+.reset-box .btns{justify-content:flex-end}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--felt);margin:0}
+.ico{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:6px;vertical-align:-3px}
 .cues{position:relative;list-style:none;margin:0;padding:0;max-height:min(58vh,560px);overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
 .cues > li:last-child{border-bottom:none}
 @media (max-width:900px){.cues{max-height:60vh;max-height:min(60dvh,540px)}}
@@ -280,6 +294,12 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
 .opt.wide{grid-column:1/-1}
 .opt .seg.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
 .opt .seg.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.hdr-cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.hdr-cmp figure{margin:0;display:flex;flex-direction:column;gap:4px;min-width:0}
+.hdr-cmp canvas{width:100%;height:auto;max-height:260px;object-fit:contain;border-radius:8px;background:var(--video-bg)}
+.hdr-cmp figcaption{font-size:12px;color:var(--muted);text-align:center}
+.hdr-cmp figure.on figcaption{color:var(--ink);font-weight:700}
+.hdr-cmp figure.on canvas{outline:2px solid var(--felt);outline-offset:2px}
 .f-script{font-family:"Great Vibes",cursive;font-size:17px;font-weight:400}
 .f-italic{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-size:15px}
 .f-light{font-family:"Quicksand","Be Vietnam Pro",sans-serif;font-weight:400}
@@ -331,9 +351,15 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
       <span class="save-state" id="saveState" aria-live="polite"></span>
       <span class="fname" id="fname"></span>
       <input type="file" id="file" class="file-input" accept="video/*,audio/*,.mov,.mp4,.m4v,.3gp,.mp3,.m4a,.wav">
+      <button class="btn ghost" id="resetBtn" type="button" aria-controls="resetBox" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4.5h4.5"/></svg>Làm mới</button>
       <label class="btn" for="file" id="fileBtn">Chọn video</label>
     </div>
   </header>
+  <div class="reset-box" id="resetBox" role="group" aria-labelledby="resetTitle" hidden>
+    <p><b id="resetTitle">Làm mới trang?</b> Video, lời bài hát, thời gian đã gõ, tiêu đề và video đã xuất sẽ bị xoá để bắt đầu lại từ đầu. Không hoàn tác được.</p>
+    <label class="chk"><input type="checkbox" id="resetStyle"> Đưa cả kiểu chữ, màu và bù trễ về mặc định</label>
+    <div class="btns"><button class="btn" id="resetCancel" type="button">Huỷ</button><button class="btn primary" id="resetOk" type="button">Làm mới</button></div>
+  </div>
 
   <ol class="steps" id="steps">
     <li data-step="1"><b>1</b><span>Chọn video cover</span></li>
@@ -376,6 +402,8 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
         </div>
         <div class="track" id="track">
           <div class="rail"><div class="blks" id="blks"></div><div class="fill"></div></div>
+          <div class="ticks" id="ticks" aria-hidden="true"></div>
+          <div class="seek-tip" id="seekTip" hidden></div>
           <input type="range" id="seek" min="0" max="1" step="any" value="0" aria-label="Vị trí phát" disabled>
         </div>
       </div>
@@ -410,6 +438,10 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
       </div>
 
       <div class="panel" id="panelLyrics" role="tabpanel" aria-labelledby="tabLyrics" hidden>
+        <div class="note" id="freshNote" hidden>
+          <span id="freshText"></span>
+          <button class="btn" id="reuseBtn" type="button">Dùng lại lời cũ</button>
+        </div>
         <div class="lyr-head">
           <span class="lbl"><label for="lyrics">Dán lời bài hát, mỗi dòng là một câu</label><button class="info" type="button" aria-expanded="false" aria-controls="lyricsTip" aria-label="Giải thích: cách dán lời"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
           <button class="btn ghost small" id="clearLyricsBtn" type="button">Xoá hết</button>
@@ -479,6 +511,15 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
             <div class="opt wide"><span class="lbl">Chất lượng xuất<button class="info" type="button" aria-expanded="false" aria-controls="qualityInfo" aria-label="Giải thích: chất lượng xuất"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
               <div class="seg" data-opt="quality" role="group" aria-label="Chất lượng xuất"><button type="button" data-v="std">Tiêu chuẩn</button><button type="button" data-v="high">Cao</button></div>
               <p class="tip" id="qualityInfo" hidden></p></div>
+            <div class="opt wide" id="hdrOpt" hidden><span class="lbl">Màu video HDR <em class="sw-name" id="hdrKind"></em><button class="info" type="button" aria-expanded="false" aria-controls="hdrTip" aria-label="Giải thích: màu video HDR"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
+              <p class="tip" id="hdrTip" hidden>Video này quay ở chế độ HDR. Khi in lời, công cụ xuất ra video thường (không HDR). "Chỉnh màu" chuyển màu HDR sang thường để hình không bị nhạt và phẳng; "Giữ nguyên" để trình duyệt tự vẽ như hiện tại. Nhìn hai ảnh mẫu bên dưới và chọn bản giống video gốc hơn. Muốn giữ HDR, hãy tải file .srt rồi ghép trong CapCut.</p>
+              <div class="seg" id="hdrSeg" role="group" aria-label="Màu video HDR"><button type="button" data-hdr="fix">Chỉnh màu</button><button type="button" data-hdr="keep">Giữ nguyên</button></div>
+              <button class="btn small" id="hdrCmpBtn" type="button" hidden>Xem ảnh so sánh</button>
+              <div class="hdr-cmp" id="hdrCmp" hidden>
+                <figure><canvas id="hdrKeep"></canvas><figcaption>Giữ nguyên</figcaption></figure>
+                <figure><canvas id="hdrFixed"></canvas><figcaption>Chỉnh màu</figcaption></figure>
+              </div>
+              <p class="hint" id="hdrNote"></p></div>
           </div>
           <div class="btns">
             <button class="btn" id="vxTry" type="button">Xem thử</button>
@@ -785,6 +826,67 @@ function drawDust(ctx, L, t, W, H, st, face, size){
   }
   ctx.restore();
 }
+/* HDR → SDR. Some browsers (Safari) draw an HDR frame (HLG or PQ, BT.2020) onto a canvas as if it were
+   ordinary video, which looks flat and washed out. This re-grades such a canvas in place on the GPU:
+   undo the HDR curve, put reference white (203 nits) at SDR white with a soft roll-off for highlights,
+   convert BT.2020 colours to BT.709 and encode as sRGB. Returns false when WebGL is unavailable. */
+let HDR_GL = null;
+function hdrGl(){
+  if (HDR_GL) return HDR_GL.ok ? HDR_GL : null;
+  HDR_GL = { ok: false };
+  if (typeof document === 'undefined') return null;
+  const cv = document.createElement('canvas');
+  const gl = cv.getContext('webgl', { alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: true, antialias: false });
+  if (!gl) return null;
+  const vs = 'attribute vec2 p;varying vec2 v;void main(){v=vec2((p.x+1.0)*0.5,(1.0-p.y)*0.5);gl_Position=vec4(p,0.0,1.0);}';
+  const fs = [
+    'precision highp float;varying vec2 v;uniform sampler2D t;uniform int mode;',
+    'const vec3 Y2020=vec3(0.2627,0.6780,0.0593);',
+    'float hlgInv(float x){return x<=0.5?x*x/3.0:(exp((x-0.55991073)/0.17883277)+0.28466892)/12.0;}',
+    'vec3 pqNits(vec3 e){vec3 q=pow(max(e,vec3(0.0)),vec3(1.0/78.84375));return 10000.0*pow(max(q-0.8359375,vec3(0.0))/(18.8515625-18.6875*q),vec3(1.0/0.1593017578125));}',
+    'float enc(float c){return c<=0.0031308?12.92*c:1.055*pow(c,1.0/2.4)-0.055;}',
+    // mode 3: the browser already tone-mapped the frame but about one stop too dark (Chrome, Edge); measured lift back.
+    'float lift(float x){float y=x<=0.0235?x*4.34:0.079+1.29*x;return y<0.9?y:0.9+0.1*(1.0-exp(-(y-0.9)/0.1));}',
+    'void main(){',
+    ' vec3 e=texture2D(t,v).rgb;vec3 L;',
+    ' if(mode==3){gl_FragColor=vec4(lift(e.r),lift(e.g),lift(e.b),1.0);return;}',
+    ' if(mode==2){L=pqNits(e)/203.0;}',
+    ' else{vec3 s=vec3(hlgInv(e.r),hlgInv(e.g),hlgInv(e.b));float ys=max(dot(s,Y2020),1e-6);L=s*pow(ys,0.2)*(1000.0/203.0);}',
+    ' float y=dot(L,Y2020);',
+    ' if(y>0.75){float yc=0.75+0.25*(1.0-exp(-(y-0.75)/0.25));L*=yc/y;}',
+    ' vec3 c=clamp(mat3(1.6605,-0.1246,-0.0182,-0.5876,1.1329,-0.1006,-0.0728,-0.0083,1.1187)*L,0.0,1.0);',
+    ' gl_FragColor=vec4(enc(c.r),enc(c.g),enc(c.b),1.0);',
+    '}'].join('\n');
+  const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
+  const a = sh(gl.VERTEX_SHADER, vs), b = sh(gl.FRAGMENT_SHADER, fs);
+  if (!a || !b) return null;
+  const prog = gl.createProgram(); gl.attachShader(prog, a); gl.attachShader(prog, b); gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
+  gl.useProgram(prog);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  HDR_GL = { ok: true, cv, gl, uMode: gl.getUniformLocation(prog, 'mode') };
+  return HDR_GL;
+}
+function hdrToSdrInPlace(ctx, W, H, transfer){
+  const g = hdrGl();
+  if (!g) return false;
+  const gl = g.gl;
+  if (g.cv.width !== W || g.cv.height !== H){ g.cv.width = W; g.cv.height = H; }
+  gl.viewport(0, 0, W, H);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, ctx.canvas);
+  gl.uniform1i(g.uMode, transfer === 'pq' ? 2 : transfer === 'lift' ? 3 : 1);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'copy';
+  ctx.drawImage(g.cv, 0, 0, W, H);
+  ctx.restore();
+  return true;
+}
 // Draws line L at time t on a W×H frame. Same code paints the preview and the exported video.
 function drawLyrics(ctx, L, t, W, H, st){
   if (!L || !L.text) return;
@@ -906,14 +1008,14 @@ function drawTitle(ctx, text, t, W, H, hold, color){
 (function(){
   const $ = id => document.getElementById(id);
   const E = {
-    file: $('file'), fileBtn: $('fileBtn'), fname: $('fname'), steps: $('steps'),
+    file: $('file'), fileBtn: $('fileBtn'), resetBtn: $('resetBtn'), resetBox: $('resetBox'), fname: $('fname'), steps: $('steps'),
     player: $('player'), video: $('video'), ovCanvas: $('ovCanvas'), drop: $('drop'),
     playBtn: $('playBtn'), icoPlay: $('icoPlay'), icoPause: $('icoPause'), clockNow: $('clockNow'), clockDur: $('clockDur'),
-    speed: $('speed'), blks: $('blks'), seek: $('seek'), track: $('track'),
+    speed: $('speed'), blks: $('blks'), seek: $('seek'), track: $('track'), ticks: $('ticks'), seekTip: $('seekTip'),
     tapKey: $('tapKey'), keyEyebrow: $('keyEyebrow'), keyLine: $('keyLine'), keyNext: $('keyNext'),
     restBtn: $('restBtn'), undoBtn: $('undoBtn'),
     tabLyrics: $('tabLyrics'), tabCues: $('tabCues'), panelLyrics: $('panelLyrics'), panelCues: $('panelCues'), cueCount: $('cueCount'),
-    lyrics: $('lyrics'), groupSeg: $('groupSeg'), applyBtn: $('applyBtn'), clearLyricsBtn: $('clearLyricsBtn'),
+    lyrics: $('lyrics'), freshNote: $('freshNote'), freshText: $('freshText'), reuseBtn: $('reuseBtn'), groupSeg: $('groupSeg'), applyBtn: $('applyBtn'), clearLyricsBtn: $('clearLyricsBtn'),
     sampleNote: $('sampleNote'), pasteBtn: $('pasteBtn'), offMinus: $('offMinus'), offPlus: $('offPlus'), offVal: $('offVal'), clearBtn: $('clearBtn'),
     cues: $('cues'), dlBtn: $('dlBtn'), copyBtn: $('copyBtn'), dlHint: $('dlHint'), dlInfo: $('dlInfo'), dlNote: $('dlNote'), srtDetails: $('srtDetails'), srtOut: $('srtOut'),
     dropKb: $('dropKb'), dropTitle: $('dropTitle'), dropTap: $('dropTap'), dropPick: $('dropPick'), dropNote: $('dropNote'), dropDetail: $('dropDetail'),
@@ -931,6 +1033,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   const S = { group: 1, cues: [], idx: 0, offset: -0.15, sample: true, exported: false };
   let TL = [], hasVideo = false, objUrl = null, videoName = '', hist = [], saveT = 0, raf = 0, scrubbing = false, lastActive = -2, toastT = 0;
   const STYLE = { anim: 'fade', font: 'light', size: 's', color: 'white', fx: 'plain', pos: 'upper', title: '', titleDur: '5', quality: 'std' };
+  const STYLE_DEFAULT = Object.assign({}, STYLE), OFFSET_DEFAULT = S.offset;
   const PRESETS = {
     en1: { anim: 'fade', font: 'light', size: 's', color: 'white', fx: 'plain', pos: 'upper' },
     en2: { anim: 'fade', font: 'script', size: 's', color: 'white', fx: 'plain', pos: 'top' }
@@ -963,6 +1066,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   /* ---------- storage (per-viewer draft) ----------
      Everything the person was doing is written at once when the page is hidden (screen off, app switch),
      so a phone that sleeps or reloads the tab comes back to the same place. */
+  let prevSong = null, workedVideo = null, pendingFresh = null;   // the stashed lyrics of the previous video; the last video that actually opened
   let videoMeta = null;     // { name, size, lastModified } of the open video
   let resumeInfo = null;    // where the last session stopped, until this session takes over
   let pendingResumeTime = null, pendingScroll = null;
@@ -981,7 +1085,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   function saveNow(){
     clearTimeout(saveT);
     try {
-      localStorage.setItem(STORE, JSON.stringify({ lyrics: E.lyrics.value, group: S.group, cues: S.cues, idx: S.idx, offset: S.offset, sample: S.sample, style: STYLE, ui: uiState() }));
+      localStorage.setItem(STORE, JSON.stringify({ lyrics: E.lyrics.value, group: S.group, cues: S.cues, idx: S.idx, offset: S.offset, sample: S.sample, style: STYLE, ui: uiState(), prev: prevSong }));
       const d = new Date();
       E.saveState.textContent = 'Đã tự lưu ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
     } catch (e) {
@@ -1004,14 +1108,19 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     try { return !!localStorage.getItem(RESTORE_KEY); } catch (e) { return false; }
   }
   // Write immediately whenever the page may be put to sleep or thrown away.
-  document.addEventListener('visibilitychange', () => { if (document.hidden){ restoreMark(false); saveNow(); } });
-  window.addEventListener('pagehide', () => { restoreMark(false); saveNow(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden){ restoreMark(false); try { localStorage.removeItem(STORE + '.hdrcheck'); } catch (e) {} saveNow(); } });
+  window.addEventListener('pagehide', () => { restoreMark(false); try { localStorage.removeItem(STORE + '.hdrcheck'); } catch (e) {} saveNow(); });
   document.addEventListener('freeze', saveNow);
   let scrollSaveT = 0;
   window.addEventListener('scroll', () => { clearTimeout(scrollSaveT); scrollSaveT = setTimeout(save, 500); }, { passive: true });
 
-  // The video file and the last export are kept in IndexedDB, so they come back without picking them again.
-  const VIDEO_KEEP_MAX = (isIOS ? 0.6 : 1.5) * 1024 * 1024 * 1024;
+  /* The video file and the last export are kept in IndexedDB, so they come back without picking them again.
+     On iPhone the video is NOT kept: reading a stored file of several hundred MB back can take the page down
+     (seen inside the Claude app), so after a reload the person picks it again and lands at the same spot.
+     Small exports are still kept there. A little "meta" record is stored next to each file, so sizes can be
+     checked without ever reading the big file. */
+  const VIDEO_KEEP_MAX = isIOS ? 0 : 1.5 * 1024 * 1024 * 1024;
+  const EXPORT_KEEP_MAX = (isIOS ? 100 : 700) * 1024 * 1024;
   function idb(){
     return new Promise((res, rej) => {
       if (!('indexedDB' in window)) { rej(new Error('no idb')); return; }
@@ -1038,15 +1147,26 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   const idbDel = key => idbDo('readwrite', st => st.delete(key)).catch(() => false);
   async function keepVideo(f){
     if (!f) return;
-    if (f.size > VIDEO_KEEP_MAX){ idbDel('video'); return; }   // too big to keep: don't hold on to an older video either
-    const old = await idbGet('video');
-    if (old && sameVideo(old.meta, videoMeta)) return;
-    await idbPut('video', { file: f, meta: { name: f.name, size: f.size, lastModified: f.lastModified || 0 } });
+    if (f.size > VIDEO_KEEP_MAX){ idbDel('video'); idbDel('videoMeta'); return; }   // not kept: don't hold on to an older one either
+    const old = await idbGet('videoMeta');
+    if (old && sameVideo(old, videoMeta)) return;
+    const meta = { name: f.name, size: f.size, lastModified: f.lastModified || 0 };
+    await idbDel('videoMeta');
+    if (await idbPut('video', { file: f, meta })) await idbPut('videoMeta', meta);
+  }
+  function dropExport(){ idbDel('export'); idbDel('exportMeta'); }
+  function clearExport(){
+    if (lastExport && lastExport.url) URL.revokeObjectURL(lastExport.url);
+    lastExport = null;
+    E.vxVideo.removeAttribute('src');
+    E.vxResult.hidden = true; E.vxSaveStatus.hidden = true; E.vxResumeNote.hidden = true;
+    dropExport();
+    S.exported = false;
   }
 
   /* ---------- history ---------- */
   function pushHistory(){
-    hist.push(JSON.stringify({ cues: S.cues, idx: S.idx, sample: S.sample }));
+    hist.push(JSON.stringify({ cues: S.cues, idx: S.idx, sample: S.sample, title: STYLE.title }));
     if (hist.length > 300) hist.shift();
   }
   function undo(){
@@ -1055,6 +1175,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     if (!s){ toast('Không còn thao tác nào để hoàn tác.'); return; }
     const o = JSON.parse(s);
     S.cues = o.cues; S.idx = o.idx; S.sample = o.sample;
+    if (typeof o.title === 'string' && o.title !== STYLE.title){ STYLE.title = o.title; applyStyleUI(); }
     render(); save();
   }
 
@@ -1139,21 +1260,24 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   function applyLyrics(){
     const fresh = parseLyrics(E.lyrics.value, S.group);
     if (!fresh.length){ toast('Ô lời đang trống. Dán lời bài hát vào trước.'); return; }
+    // New lyrics start over on this video: old timing, per-line styles, the song title and the
+    // exported video all go. The video itself and the shared style stay. "Hoàn tác" brings the lines back.
+    const hadWork = !S.sample && (S.cues.some(c => c.start != null || c.st) || !!STYLE.title || !!lastExport);
     pushHistory();
     const hasLrc = fresh.some(c => c.start != null);
-    let kept = 0;
-    if (!hasLrc && !S.sample){
-      fresh.forEach((c, i) => { const o = S.cues[i]; if (o && o.start != null){ c.start = o.start; c.end = o.end; kept++; } });
-    }
-    if (!S.sample) fresh.forEach((c, i) => { const o = S.cues[i]; if (o && o.st) c.st = Object.assign({}, o.st); });
     editIdx = -1;
     S.cues = fresh; S.sample = false;
+    prevSong = null; E.freshNote.hidden = true;
+    STYLE.title = '';
+    clearExport();
+    if (hasVideo){ try { E.video.pause(); E.video.currentTime = 0; } catch (e) {} }
     const firstUntimed = S.cues.findIndex(c => c.start == null);
     S.idx = firstUntimed === -1 ? S.cues.length : firstUntimed;
+    applyStyleUI();
     setTab('cues'); render(); save();
-    if (hasLrc) toast('Đã tạo ' + fresh.length + ' câu, thời gian lấy từ mốc LRC.');
-    else if (kept) toast('Đã cập nhật ' + fresh.length + ' câu, giữ thời gian của ' + kept + ' câu đã gõ.');
-    else toast('Đã tạo ' + fresh.length + ' câu. Phát video và gõ Space khi mỗi câu bắt đầu.');
+    const undoHint = hadWork ? ' Phần cũ đã được xoá, lỡ tay thì bấm "Hoàn tác".' : '';
+    if (hasLrc) toast('Đã tạo ' + fresh.length + ' câu, thời gian lấy từ mốc LRC.' + undoHint);
+    else toast('Đã tạo ' + fresh.length + ' câu mới. Phát video và gõ Space khi mỗi câu bắt đầu.' + undoHint);
   }
   function togglePlay(){
     if (exporting) return;
@@ -1400,18 +1524,43 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     E.cues.scrollTop = keepScroll;
   }
   function renderTrack(){
-    E.blks.replaceChildren();
+    E.blks.replaceChildren(); E.ticks.replaceChildren();
     const dur = duration();
     if (!dur) return;
-    const frag = document.createDocumentFragment();
-    for (const x of TL){
+    const frag = document.createDocumentFragment(), marks = document.createDocumentFragment();
+    TL.forEach((x, k) => {
       const b = mk('span', 'blk'); b.dataset.i = x.i;
       b.style.left = (x.s / dur * 100) + '%';
       b.style.width = Math.max(0.25, (x.e - x.s) / dur * 100) + '%';
       frag.append(b);
-    }
-    E.blks.append(frag);
+      // a mark at every line start; a faint short one where a line ends on silence
+      const t = mk('span', 'tick'); t.dataset.i = x.i; t.style.left = (x.s / dur * 100) + '%';
+      marks.append(t);
+      const next = TL[k + 1];
+      if (!next || next.s - x.e > 0.25){ const r = mk('span', 'tick rest'); r.style.left = (x.e / dur * 100) + '%'; marks.append(r); }
+    });
+    E.blks.append(frag); E.ticks.append(marks);
   }
+  // While dragging: which line is under the thumb.
+  let tipT = 0;
+  function showSeekTip(t){
+    const dur = duration();
+    if (!dur){ E.seekTip.hidden = true; return; }
+    let hit = null, before = null;
+    for (const x of TL){ if (t >= x.s && t < x.e) hit = x; if (x.s <= t) before = x; }
+    E.seekTip.replaceChildren();
+    if (hit){ const b = mk('b', '', 'Câu ' + (hit.i + 1)); E.seekTip.append(b, document.createTextNode(S.cues[hit.i] ? S.cues[hit.i].text : '')); }
+    else if (!TL.length) E.seekTip.textContent = tcShort(t);
+    else if (!before) E.seekTip.append(mk('b', '', 'Trước câu 1'), document.createTextNode(tcShort(t)));
+    else E.seekTip.append(mk('b', '', 'Nghỉ'), document.createTextNode('sau câu ' + (before.i + 1)));
+    E.seekTip.hidden = false;
+    const W = E.track.clientWidth, thumb = parseFloat(getComputedStyle(E.track).getPropertyValue('--thumb')) || 20;
+    const x = thumb / 2 + (W - thumb) * Math.min(1, Math.max(0, t / dur));
+    const half = E.seekTip.offsetWidth / 2;
+    E.seekTip.style.left = Math.min(W - half, Math.max(half, x)) + 'px';
+    clearTimeout(tipT);
+  }
+  function hideSeekTip(delay){ clearTimeout(tipT); tipT = setTimeout(() => { E.seekTip.hidden = true; }, delay || 0); }
   function renderSteps(){
     const lis = E.steps.children;
     const ready = !S.sample && S.cues.length > 0;
@@ -1446,10 +1595,12 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     if (act !== lastActive){
       for (const r of E.cues.querySelectorAll('.is-active')) r.classList.remove('is-active');
       for (const b of E.blks.querySelectorAll('.on')) b.classList.remove('on');
+      for (const b of E.ticks.querySelectorAll('.on')) b.classList.remove('on');
       if (act >= 0){
         const r = rowEl(act);
         if (r && r.classList.contains('cue')){ r.classList.add('is-active'); if (!E.video.paused) keepInView(r); }
         const b = E.blks.querySelector('[data-i="' + act + '"]'); if (b) b.classList.add('on');
+        const k = E.ticks.querySelector('.tick[data-i="' + act + '"]:not(.rest)'); if (k) k.classList.add('on');
       }
       lastActive = act;
     }
@@ -1527,6 +1678,9 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     if (objUrl){ URL.revokeObjectURL(objUrl); objUrl = null; }
     fromStore = !!(opts && opts.fromStore);
     const meta = { name: f.name || 'video', size: f.size, lastModified: f.lastModified || 0 };
+    // A different video from the one being worked on starts a fresh song, once it has actually opened.
+    const prevVideo = workedVideo || (resumeInfo && resumeInfo.video) || null;
+    pendingFresh = (!fromStore && prevVideo && !sameVideo(meta, prevVideo)) ? prevVideo.name : null;
     // Same video as the unfinished session: go back to where it stopped.
     pendingResumeTime = resumeInfo && sameVideo(meta, resumeInfo.video) ? resumeInfo.time : null;
     videoMeta = meta;
@@ -1538,6 +1692,88 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     render();
     attachSource(f, 'blob');
     armTapHint(tok);
+  }
+  // Lyrics, timing, per-line styles, the song title and the old export belong to the old video.
+  // The shared lyric style and the reaction offset are the person's habits, so they stay.
+  function showFreshNote(){
+    E.freshNote.hidden = !prevSong;
+    if (prevSong) E.freshText.textContent = 'Đã làm mới cho video mới. Lời của "' + (prevSong.name || 'video trước') + '" được cất tạm, bấm nút bên cạnh nếu video mới vẫn là bài cũ.';
+  }
+  function startFreshSong(prevName){
+    const had = !S.sample && (S.cues.length > 0 || E.lyrics.value.trim() !== '');
+    prevSong = had ? {
+      name: prevName, lyrics: E.lyrics.value, group: S.group, title: STYLE.title,
+      cues: S.cues.map(c => ({ text: c.text, p: c.p, st: c.st ? Object.assign({}, c.st) : null }))
+    } : null;
+    hist.length = 0;
+    editIdx = -1; resumeInfo = null; pendingScroll = null;
+    if (!S.sample){ E.lyrics.value = ''; S.cues = []; S.idx = 0; }
+    clearedLyrics = null; syncClearBtn();
+    STYLE.title = '';
+    clearExport();
+    showFreshNote();
+    applyStyleUI();
+    setTab(S.sample ? 'cues' : 'lyrics');
+    render(); save();
+  }
+  E.reuseBtn.addEventListener('click', () => {
+    if (!prevSong) return;
+    E.lyrics.value = prevSong.lyrics; S.group = prevSong.group;
+    S.cues = prevSong.cues.map(c => {
+      const o = { text: c.text, start: null, end: null };
+      if (Number.isInteger(c.p)) o.p = c.p;
+      if (c.st) o.st = Object.assign({}, c.st);
+      return o;
+    });
+    S.idx = 0; S.sample = false; editIdx = -1;
+    if (!STYLE.title) STYLE.title = prevSong.title || '';
+    prevSong = null; E.freshNote.hidden = true;
+    clearedLyrics = null; syncClearBtn();
+    setGroupUI(); applyStyleUI();
+    setTab('cues'); render(); save();
+    toast('Đã dùng lại lời cũ, thời gian được xoá. Phát video rồi gõ nhịp lại từ câu 1.');
+  });
+  /* ---------- "Làm mới": back to a first visit ---------- */
+  function openReset(open){
+    E.resetBox.hidden = !open;
+    E.resetBtn.setAttribute('aria-expanded', String(open));
+    if (open){ $('resetStyle').checked = false; E.resetBox.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); $('resetCancel').focus({ preventScroll: true }); }
+  }
+  E.resetBtn.addEventListener('click', () => { if (!exporting) openReset(E.resetBox.hidden); });
+  $('resetCancel').addEventListener('click', () => openReset(false));
+  $('resetOk').addEventListener('click', () => { const all = $('resetStyle').checked; openReset(false); resetPage(all); });
+  function resetPage(all){
+    if (exporting) return;
+    unfloat();
+    // the video
+    try { E.video.pause(); } catch (e) {}
+    srcMode = ''; loadToken++; tried = [];
+    if (objUrl){ URL.revokeObjectURL(objUrl); objUrl = null; }
+    E.video.removeAttribute('src');
+    try { E.video.load(); } catch (e) {}
+    currentFile = null; videoMeta = null; workedVideo = null; videoName = ''; hasVideo = false;
+    resumeInfo = null; pendingResumeTime = null; pendingFresh = null; pendingScroll = null; prevSong = null;
+    HDR.on = false; HDR.choice = null; HDR.tagged = null; $('hdrCmp').hidden = true; $('hdrCmpBtn').hidden = true; renderHdrOpt();
+    idbDel('video'); idbDel('videoMeta'); dropExport();
+    restoreMark(false); try { localStorage.removeItem(STORE + '.hdrcheck'); } catch (e) {}
+    clearExport();
+    // the song: the same sample a first visit shows
+    E.lyrics.value = SAMPLE_LYRICS; S.group = 1;
+    S.cues = parseLyrics(SAMPLE_LYRICS, 1);
+    S.cues.forEach((c, i) => { const t = SAMPLE_TIMES[i]; if (t){ c.start = t[0]; c.end = t[1]; } });
+    S.idx = 0; S.sample = true; hist.length = 0; editIdx = -1;
+    clearedLyrics = null; E.freshNote.hidden = true;
+    STYLE.title = '';
+    if (all){ Object.assign(STYLE, STYLE_DEFAULT); S.offset = OFFSET_DEFAULT; }
+    E.speed.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.rate === '1')));
+    E.video.playbackRate = 1;
+    E.drop.hidden = false; E.seek.disabled = true; E.seek.value = 0; E.track.style.setProperty('--p', 0);
+    setDrop('');
+    E.fname.textContent = ''; E.fname.title = '';
+    setGroupUI(); applyStyleUI(); syncClearBtn();
+    setTab('cues'); render(); saveNow();
+    window.scrollTo(0, 0);
+    toast(all ? 'Đã làm mới trang và đưa kiểu chữ về mặc định. Chọn video để bắt đầu.' : 'Đã làm mới trang. Chọn video để bắt đầu bài mới.');
   }
   function armTapHint(tok){
     clearTimeout(tapT);
@@ -1593,17 +1829,21 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     layoutOverlay();
     updateQualityInfo();
     if (fastCapable()) loadMediabunny();   // fetch the fast exporter in the background so export starts at once
+    detectHdr(currentFile, loadToken);
     render();
+    if (pendingFresh){ const old = pendingFresh; pendingFresh = null; startFreshSong(old); }
     const resumed = pendingResumeTime != null && pendingResumeTime > 0.05;
     if (resumed){ try { E.video.currentTime = Math.min(pendingResumeTime, Math.max(0, (E.video.duration || 0) - 0.1)); } catch (e) {} }
     pendingResumeTime = null;
     resumeInfo = null;
+    workedVideo = videoMeta;
+    if (fromStore) setTimeout(() => restoreMark(false), 5000);
     if (!fromStore) keepVideo(currentFile);
     if (pendingScroll != null){ const y = pendingScroll; pendingScroll = null; requestAnimationFrame(() => window.scrollTo(0, y)); }
     save();
     toast(resumed ? 'Đã mở lại đúng chỗ bạn đang làm dở (' + tcShort(E.video.currentTime || 0).slice(0, 5) + ').'
       : fromStore ? 'Đã mở lại video bạn đang làm.'
-      : S.sample ? 'Đã mở video. Giờ dán lời bài hát ở thẻ "Lời bài hát".' : 'Đã mở video. Bấm P để phát, gõ Space khi mỗi câu bắt đầu.');
+      : (S.sample || !S.cues.length) ? 'Đã mở video. Giờ dán lời bài hát ở thẻ "Lời bài hát".' : 'Đã mở video. Bấm P để phát, gõ Space khi mỗi câu bắt đầu.');
     // Some desktop browsers play an iPhone HEVC file as sound only: say so instead of showing a black box.
     const f = currentFile;
     const isVideoFile = f && (/^video\//.test(f.type) || /\.(mp4|m4v|mov|qt|3gp)$/i.test(f.name));
@@ -1676,8 +1916,9 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     save();
   });
   E.seek.addEventListener('pointerdown', () => { scrubbing = true; });
-  E.seek.addEventListener('input', () => { if (hasVideo && !exporting){ E.video.currentTime = +E.seek.value; updateActive(); } });
-  E.seek.addEventListener('change', () => { scrubbing = false; });
+  E.seek.addEventListener('input', () => { if (hasVideo && !exporting){ E.video.currentTime = +E.seek.value; updateActive(); showSeekTip(+E.seek.value); } });
+  E.seek.addEventListener('change', () => { scrubbing = false; hideSeekTip(900); });
+  ['pointerup', 'pointercancel', 'blur'].forEach(ev => E.seek.addEventListener(ev, () => hideSeekTip(900)));
   window.addEventListener('pointerup', () => { scrubbing = false; });
 
   function pressable(btn, fn){
@@ -2042,6 +2283,93 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   const fastCapable = () => typeof window.VideoEncoder === 'function' && typeof window.VideoDecoder === 'function' && typeof window.VideoFrame === 'function';
   let mbPromise = null, fx = null, fxActive = false, fxCanceled = false;
   const stopIfCanceled = () => { if (fxCanceled) throw new Error('canceled'); };
+  /* ---------- HDR videos ----------
+     The browser's own frames tell how it will draw them: a frame still marked HLG/PQ gets tone-mapped by
+     the browser, but about one stop too dark (Chrome, Edge), so it only needs lifting; a frame marked as
+     ordinary video (Safari today) is drawn flat and needs the full HDR → SDR re-grade. */
+  const HDR = { on: false, transfer: null, tagged: null, choice: null };
+  function hdrFix(){ return HDR.on && (HDR.choice || 'fix') === 'fix'; }
+  function hdrMode(){ return hdrFix() ? (HDR.tagged ? 'lift' : HDR.transfer) : null; }
+  function renderHdrOpt(){
+    const el = $('hdrOpt');
+    el.hidden = !HDR.on;
+    if (!HDR.on) return;
+    const fix = hdrFix();
+    $('hdrKind').textContent = '· ' + (HDR.transfer === 'pq' ? 'HDR10 / PQ' : 'HLG / Dolby Vision');
+    $('hdrSeg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.hdr === 'fix') === fix)));
+    const figs = $('hdrCmp').querySelectorAll('figure');
+    figs[0].classList.toggle('on', !fix); figs[1].classList.toggle('on', fix);
+    $('hdrNote').textContent = HDR.choice ? '' : 'Mặc định là "Chỉnh màu". Nếu ảnh "Giữ nguyên" trông giống video gốc hơn thì chọn nó.';
+  }
+  $('hdrSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-hdr]');
+    if (!b || exporting) return;
+    HDR.choice = b.dataset.hdr; renderHdrOpt();
+  });
+  /* Opening a video only reads the file header (cheap). Decoding a frame for the comparison stills is
+     heavy next to a playing 4K HDR video, so on iPhone it waits for a tap; elsewhere it runs on its own,
+     under a crash mark: if that ever takes the page down, the next visit asks for a tap instead. */
+  const HDR_KEY = STORE + '.hdrcheck';
+  function hdrCheckMark(on){ try { if (on) localStorage.setItem(HDR_KEY, '1'); else localStorage.removeItem(HDR_KEY); } catch (e) {} }
+  function hdrCheckCrashed(){ try { const v = localStorage.getItem(HDR_KEY); localStorage.removeItem(HDR_KEY); return !!v; } catch (e) { return false; } }
+  async function detectHdr(file, tok){
+    HDR.on = false; HDR.transfer = null; HDR.tagged = isIOS ? false : null; HDR.choice = null;
+    $('hdrCmp').hidden = true; $('hdrCmpBtn').hidden = true; renderHdrOpt();
+    let mb = null;
+    try { mb = await loadMediabunny(); } catch (e) {}
+    if (!mb || tok !== loadToken) return;
+    let input = null;
+    try {
+      input = new mb.Input({ source: new mb.BlobSource(file), formats: mb.ALL_FORMATS });
+      const track = await input.getPrimaryVideoTrack();
+      if (track && tok === loadToken && await track.hasHighDynamicRange()){
+        const cs = await track.getColorSpace();
+        HDR.on = true; HDR.transfer = cs && cs.transfer === 'pq' ? 'pq' : 'hlg';
+      }
+    } catch (e) {
+    } finally { try { if (input) input.dispose(); } catch (e) {} }
+    if (tok !== loadToken) return;
+    renderHdrOpt();
+    if (!HDR.on) return;
+    if (isIOS || hdrCheckCrashed()) $('hdrCmpBtn').hidden = false;
+    else hdrThumbs(file, tok);
+  }
+  async function hdrThumbs(file, tok){
+    $('hdrCmpBtn').hidden = true;
+    let mb = null;
+    try { mb = await loadMediabunny(); } catch (e) {}
+    if (!mb || tok !== loadToken) return;
+    hdrCheckMark(true);
+    let input = null;
+    try {
+      input = new mb.Input({ source: new mb.BlobSource(file), formats: mb.ALL_FORMATS });
+      const track = await input.getPrimaryVideoTrack();
+      if (!track || !(await track.canDecode())) return;
+      const sink = new mb.VideoSampleSink(track);
+      const at = E.video.currentTime > 0.5 ? E.video.currentTime : Math.min((E.video.duration || 0) * 0.3, 8);
+      const sample = await sink.getSample(at);
+      if (!sample) return;
+      try {
+        if (tok !== loadToken) return;
+        // A frame still marked HLG/PQ is one the browser tone-maps itself (only lifting needed).
+        try { const vf = sample.toVideoFrame(); const tr = vf.colorSpace && vf.colorSpace.transfer; vf.close(); HDR.tagged = tr === 'hlg' || tr === 'pq'; } catch (e) {}
+        const a = $('hdrKeep'), b = $('hdrFixed');
+        const vw = E.video.videoWidth || 9, vh = E.video.videoHeight || 16;
+        const w = 360, h = Math.max(2, Math.round(w * vh / vw));
+        a.width = b.width = w; a.height = b.height = h;
+        const ca = a.getContext('2d'), cb = b.getContext('2d');
+        sample.drawWithFit(ca, { fit: 'contain' });
+        cb.drawImage(a, 0, 0);
+        if (hdrToSdrInPlace(cb, w, h, HDR.tagged ? 'lift' : HDR.transfer)) $('hdrCmp').hidden = false;
+      } finally { sample.close(); }
+    } catch (e) {
+    } finally {
+      try { if (input) input.dispose(); } catch (e) {}
+      hdrCheckMark(false);
+      if (tok === loadToken) renderHdrOpt();
+    }
+  }
+  $('hdrCmpBtn').addEventListener('click', () => { if (currentFile && !exporting) hdrThumbs(currentFile, loadToken); });
   function addScript(src){
     return new Promise(res => {
       const s = document.createElement('script');
@@ -2087,6 +2415,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     await loadFonts(STYLE);
     stopIfCanceled();
     const st = Object.assign({}, STYLE), tl = TL.slice(), texts = S.cues.map(c => ({ text: c.text, st: c.st ? Object.assign({}, c.st) : null }));
+    const tm = hdrMode();
     const input = new mb.Input({ source: new mb.BlobSource(f), formats: mb.ALL_FORMATS });
     const vTrack = await input.getPrimaryVideoTrack();
     if (!vTrack) return null;
@@ -2105,6 +2434,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
           c2.setTransform(1, 0, 0, 1, 0, 0);
           c2.globalAlpha = 1;
           sample.drawWithFit(c2, { fit: 'fill' });
+          if (tm) hdrToSdrInPlace(c2, W, H, tm);
           drawTitle(c2, st.title, t, W, H, st.titleDur, colorOf(st.color));
           drawLyrics(c2, lyricAt(tl, texts, t), t, W, H, st);
           return cv;
@@ -2165,7 +2495,9 @@ function drawTitle(ctx, text, t, W, H, hold, color){
       return;
     }
     E.vxResumeNote.hidden = true;
-    idbPut('export', { blob, at: Date.now() });   // kept until saved, so a sleeping phone does not lose it
+    // kept until saved, so a sleeping phone does not lose it (only if small enough to read back safely)
+    if (blob.size <= EXPORT_KEEP_MAX){ const at = Date.now(); idbDel('exportMeta'); idbPut('export', { blob, at }).then(ok => { if (ok) idbPut('exportMeta', { size: blob.size, at }); }); }
+    else dropExport();
     S.exported = true; renderSteps();
     toast(msg);
     try { E.vxResult.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
@@ -2212,11 +2544,13 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     E.video.loop = false; E.video.playbackRate = 1;
     await seekTo(0);
     const st = Object.assign({}, STYLE), tl = TL.slice(), texts = S.cues.map(c => ({ text: c.text, st: c.st ? Object.assign({}, c.st) : null }));
+    const tm = hdrMode();
     const draw = () => {
       const t = E.video.currentTime;
       c2.setTransform(1, 0, 0, 1, 0, 0);
       c2.globalAlpha = 1;
       c2.drawImage(E.video, 0, 0, W, H);
+      if (tm) hdrToSdrInPlace(c2, W, H, tm);
       drawTitle(c2, st.title, t, W, H, st.titleDur, colorOf(st.color));
       drawLyrics(c2, lyricAt(tl, texts, t), t, W, H, st);
     };
@@ -2268,7 +2602,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
       : 'Xuất xong. Xem lại rồi bấm "Lưu video".');
   }
   // Once the video is in the person's hands, the kept copy is no longer needed.
-  function exportSaved(){ idbDel('export'); E.vxResumeNote.hidden = true; }
+  function exportSaved(){ dropExport(); E.vxResumeNote.hidden = true; }
   // The result of a save stays written under the button, so it can't be missed like a toast.
   function saveStatus(kind, title, detail){
     const el = E.vxSaveStatus;
@@ -2384,7 +2718,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     if (['3', '5', '8'].includes(String(saved.style.titleDur))) STYLE.titleDur = String(saved.style.titleDur);
     if (['std', 'high'].includes(saved.style.quality)) STYLE.quality = saved.style.quality;
   }
-  if (saved && !saved.sample && saved.cues.length){
+  if (saved && !saved.sample){
     E.lyrics.value = typeof saved.lyrics === 'string' ? saved.lyrics : '';
     S.group = saved.group === 2 ? 2 : 1;
     S.cues = saved.cues.map(c => {
@@ -2410,6 +2744,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     S.cues = parseLyrics(SAMPLE_LYRICS, 1);
     S.cues.forEach((c, i) => { const t = SAMPLE_TIMES[i]; if (t){ c.start = t[0]; c.end = t[1]; } });
     S.idx = 0; S.sample = true;
+    if (saved && typeof saved.offset === 'number') S.offset = clampOff(saved.offset);   // the reaction offset is a habit, kept with the sample too
   }
   // Where the last session stopped: tab, open line editor, speed, scroll, video and playback position.
   const ui = saved && saved.ui && typeof saved.ui === 'object' ? saved.ui : null;
@@ -2426,6 +2761,11 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   }
   const typedLyrics = S.sample && E.lyrics.value !== SAMPLE_LYRICS;
   setGroupUI(); applyStyleUI(); syncClearBtn();
+  if (saved && saved.prev && typeof saved.prev.lyrics === 'string' && Array.isArray(saved.prev.cues) && !S.sample && !S.cues.length){
+    prevSong = { name: String(saved.prev.name || ''), lyrics: saved.prev.lyrics, group: saved.prev.group === 2 ? 2 : 1, title: String(saved.prev.title || ''),
+      cues: saved.prev.cues.map(c => ({ text: String(c && c.text || ''), p: c && Number.isInteger(c.p) ? c.p : undefined, st: cleanSt(c && c.st) || null })) };
+    showFreshNote();
+  }
   setTab((ui && ui.tab === 'lyrics') || typedLyrics ? 'lyrics' : 'cues');
   render();
   if (pendingScroll) { const y = pendingScroll; requestAnimationFrame(() => window.scrollTo(0, y)); }
@@ -2434,16 +2774,26 @@ function drawTitle(ctx, text, t, W, H, hold, color){
       // The last automatic reopen took the page down: drop what was kept and let the person pick again.
       restoreMark(false);
       pendingScroll = null;
-      await idbDel('video'); await idbDel('export');
+      await idbDel('video'); await idbDel('videoMeta'); await idbDel('export'); await idbDel('exportMeta');
       if (resumeInfo && resumeInfo.video) setDrop('resume', resumeInfo.video.name);
       toast('Lần trước trang bị lỗi khi tự mở lại video, nên lần này không tự mở nữa. Lời và thời gian vẫn còn nguyên.');
       return;
     }
-    const rec = await idbGet('video');
-    const ex = await idbGet('export');
-    const useVideo = !!(rec && rec.file && rec.meta && (!resumeInfo || !resumeInfo.video || sameVideo(rec.meta, resumeInfo.video)));
+    // Mark first: if reading a stored file is what takes the page down, the next visit skips it.
+    restoreMark(true);
+    const vMeta = await idbGet('videoMeta'), xMeta = await idbGet('exportMeta');
+    const videoOk = !!(vMeta && vMeta.size <= VIDEO_KEEP_MAX && (!resumeInfo || !resumeInfo.video || sameVideo(vMeta, resumeInfo.video)));
+    const exportOk = !!(xMeta && xMeta.size > 0 && xMeta.size <= EXPORT_KEEP_MAX);
+    // Records from older versions have no meta: drop them unread.
+    if (!videoOk){ await idbDel('video'); await idbDel('videoMeta'); }
+    if (!exportOk){ await idbDel('export'); await idbDel('exportMeta'); }
+    const rec = videoOk ? await idbGet('video') : null;
+    const ex = exportOk ? await idbGet('export') : null;
+    const useVideo = !!(rec && rec.file && rec.meta);
     const useExport = !!(ex && ex.blob && ex.blob.size);
-    if (useVideo || useExport){ restoreMark(true); setTimeout(() => restoreMark(false), 10000); }
+    // The mark stays until the reopened video has played its part (see loadedmetadata), with a long fallback.
+    if (useVideo || useExport) setTimeout(() => restoreMark(false), useVideo ? 60000 : 10000);
+    else restoreMark(false);
     if (useVideo){
       const f = rec.file instanceof File ? rec.file : new File([rec.file], rec.meta.name, { type: rec.file.type || 'video/mp4', lastModified: rec.meta.lastModified || 0 });
       loadFile(f, { fromStore: true });
