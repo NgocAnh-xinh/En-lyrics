@@ -413,6 +413,10 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
 @media (min-width:901px){
   .tabs .d-only{display:inline-flex;align-items:center;gap:6px}
   .stage{position:sticky;top:12px}
+  /* the right column stays in view too and scrolls inside: a long lyric list follows the song in there,
+     without moving the page (and with it the video and the tap keys) */
+  .sheet{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-gutter:stable}
+  .sheet>.tabs{position:sticky;top:0;z-index:3;background:var(--surface);border-radius:var(--radius) var(--radius) 0 0}
   /* the frame always has the video's own shape (no black bars beside it) */
   .stage:not(.side) .player{max-height:none;width:min(100%,calc(clamp(200px,calc(100vh - 360px),620px) * var(--arn,.5625)));margin-inline:auto}
   .stage.no-video .player{width:100%;min-height:290px}
@@ -619,6 +623,8 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
           <div class="opts" id="opts">
             <div class="opt wide x-style"><span>Hiệu ứng chữ</span>
               <div class="seg grid4" data-opt="anim" role="group" aria-label="Hiệu ứng chữ"><button type="button" data-v="none">Không</button><button type="button" data-v="fade">Mờ dần</button><button type="button" data-v="rise">Trồi lên</button><button type="button" data-v="pop">Phóng to</button><button type="button" data-v="type">Đánh máy</button><button type="button" data-v="karaoke">Karaoke</button><button type="button" data-v="dust">Tan biến</button></div></div>
+            <div class="opt wide x-style" id="fadeOpt"><span>Tốc độ chuyển câu</span>
+              <div class="seg" data-opt="fadeSpeed" role="group" aria-label="Tốc độ chuyển câu của hiệu ứng mờ dần"><button type="button" data-v="fast">Nhanh</button><button type="button" data-v="mid">Vừa</button><button type="button" data-v="slow">Chậm</button></div></div>
             <div class="opt wide x-style"><span>Phông chữ</span>
               <div class="seg grid4" data-opt="font" role="group" aria-label="Phông chữ"><button type="button" data-v="bold">Đậm</button><button type="button" data-v="light" class="f-light">Mảnh</button><button type="button" data-v="script" class="f-script">Thư pháp</button><button type="button" data-v="italic" class="f-italic">Nghiêng</button></div></div>
             <div class="opt wide x-style"><span>Màu chữ <em class="sw-name" id="colorName"></em></span>
@@ -826,18 +832,29 @@ function lyricAt(tl, texts, t){
 // "Mờ dần": a line stays fully shown until its end, then fades out over FADE_OUT seconds while the next line
 // fades in (a cross-dissolve). Because the fade comes after the end, it also shows while lines are being tapped live,
 // when a line's end is only known at the moment the next one is tapped.
-const FADE_OUT = 0.6;
-function lyricLeaving(tl, texts, t, st){
-  let x = null;
-  for (let j = 0; j < tl.length; j++){ const y = tl[j]; if (t >= y.e && t < y.e + FADE_OUT && (!x || y.e > x.e)) x = y; }
-  if (!x) return null;
-  const it = texts[x.i], own = (it && it.st) || null;
-  if (((own && own.anim) || st.anim) !== 'fade') return null;
-  return { text: typeof it === 'string' ? it : it.text, st: own, s: x.s, e: x.e, leaving: true, joinedIn: false, joinedOut: false };
+// How long a line takes to fade in, and to fade out after its end ("Tốc độ chuyển câu").
+const FADE_SPEED = { fast: { in: 0.5, out: 0.45 }, mid: { in: 1.0, out: 0.8 }, slow: { in: 1.5, out: 1.3 } };
+const fadeSpeed = st => FADE_SPEED[st && st.fadeSpeed] || FADE_SPEED.slow;
+// Lines that have ended but are still fading out, oldest first. A fade-out never runs longer than about
+// half of the line that follows, so a short next line is not drawn over a ghost for its whole length.
+function lyricsLeaving(tl, texts, t, st){
+  const out = [], sp = fadeSpeed(st);
+  for (let j = 0; j < tl.length; j++){
+    const x = tl[j];
+    if (t < x.e) continue;
+    let fo = sp.out;
+    const nx = tl[j + 1];
+    if (nx && nx.s < x.e + fo) fo = Math.min(fo, Math.max(0.3, (nx.e - nx.s) * 0.6));
+    if (t >= x.e + fo) continue;
+    const it = texts[x.i], own = (it && it.st) || null;
+    if (((own && own.anim) || st.anim) !== 'fade') continue;
+    out.push({ text: typeof it === 'string' ? it : it.text, st: own, s: x.s, e: x.e, fo, leaving: true, joinedIn: false, joinedOut: false });
+  }
+  return out;
 }
-// Everything lyric-wise at time t: the line fading out (if any) under the current line.
+// Everything lyric-wise at time t: the lines fading out (if any) under the current line.
 function drawLyricsAt(ctx, tl, texts, t, W, H, st){
-  drawLyrics(ctx, lyricLeaving(tl, texts, t, st), t, W, H, st);
+  for (const L of lyricsLeaving(tl, texts, t, st)) drawLyrics(ctx, L, t, W, H, st);
   drawLyrics(ctx, lyricAt(tl, texts, t), t, W, H, st);
 }
 const clamp01 = v => Math.max(0, Math.min(1, v));
@@ -1047,12 +1064,12 @@ function drawLyrics(ctx, L, t, W, H, st){
   }
   const age = t - L.s, left = L.e - t;
   let alpha = 1, dy = 0, scale = 1;
-  // Soft fade: a line eases in over about 1 s (faster on a short line) and stays fully shown until its end;
-  // after the end it eases out over FADE_OUT while the next line comes in (see lyricLeaving).
+  // Soft fade: a line eases in (at most over half of its length) and stays fully shown until its end;
+  // after the end it eases out while the next line comes in (see lyricsLeaving). Speed: st.fadeSpeed.
   if (anim === 'fade'){
-    const span = Math.max(0.01, L.e - L.s), fin = Math.min(1.0, span * 0.4);
+    const sp = fadeSpeed(st), span = Math.max(0.01, L.e - L.s), fin = Math.min(sp.in, span * 0.5);
     alpha = easeInOut(clamp01(age / fin));
-    if (L.leaving) alpha = Math.min(alpha, 1 - easeInOut(clamp01((t - L.e) / FADE_OUT)));
+    if (L.leaving) alpha = Math.min(alpha, 1 - easeInOut(clamp01((t - L.e) / (L.fo || sp.out))));
   }
   else if (anim === 'rise'){ const p = clamp01(age / 0.32); alpha = p; dy = (1 - easeOut(p)) * size * 0.6; }
   else if (anim === 'pop'){ alpha = clamp01(age / 0.12); scale = 0.82 + 0.18 * easeBack(clamp01(age / 0.28)); }
@@ -1184,7 +1201,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
 
   const S = { group: 1, cues: [], idx: 0, offset: -0.15, sample: false, exported: false };
   let TL = [], hasVideo = false, objUrl = null, videoName = '', hist = [], saveT = 0, raf = 0, scrubbing = false, lastActive = -2, toastT = 0;
-  const STYLE = { anim: 'fade', font: 'light', size: 's', color: 'white', fx: 'plain', pos: 'upper', title: '', titleDur: '5', quality: 'std' };
+  const STYLE = { anim: 'fade', fadeSpeed: 'slow', font: 'light', size: 's', color: 'white', fx: 'plain', pos: 'upper', title: '', titleDur: '5', quality: 'std' };
   const STYLE_DEFAULT = Object.assign({}, STYLE), OFFSET_DEFAULT = S.offset;
   const PRESETS = {
     en1: { anim: 'fade', font: 'light', size: 's', color: 'white', fx: 'plain', pos: 'upper' },
@@ -1756,7 +1773,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
       return;
     }
     const b = box.getBoundingClientRect(), r = row.getBoundingClientRect();
-    if (r.top < b.top || r.bottom > b.bottom) box.scrollTop = Math.max(0, box.scrollTop + (r.top - b.top) - box.clientHeight / 3);
+    const head = box === E.sheet ? (box.querySelector(':scope > .tabs') || { offsetHeight: 0 }).offsetHeight : 0;
+    if (r.top < b.top + head || r.bottom > b.bottom) box.scrollTop = Math.max(0, box.scrollTop + (r.top - b.top - head) - (box.clientHeight - head) / 3);
   }
   function updateActive(){
     const t = E.video.currentTime || 0;
@@ -2415,6 +2433,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     });
   })();
   function applyStyleUI(){
+    $('fadeOpt').hidden = STYLE.anim !== 'fade';
     E.opts.querySelectorAll('[data-opt]').forEach(seg => {
       const key = seg.dataset.opt;
       seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === STYLE[key])));
@@ -2462,8 +2481,22 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     const key = b.closest('[data-opt]').dataset.opt;
     STYLE[key] = b.dataset.v;
     applyStyleUI(); save();
-    if (key !== 'quality') showStyleNow(key === 'titleDur' ? 'title' : 'lyric');
+    if (key === 'fadeSpeed') demoFade();
+    else if (key !== 'quality') showStyleNow(key === 'titleDur' ? 'title' : 'lyric');
   });
+  // Play across one line change (then stop) so the chosen fade speed can be seen.
+  let fadeDemoT = 0;
+  function demoFade(){
+    if (!hasVideo || exporting || !E.video.paused || TL.length < 2) return;
+    const cur = E.video.currentTime || 0;
+    const x = TL.find((y, k) => k > 0 && y.s > cur + 0.3) || TL[1];
+    const sp = fadeSpeed(STYLE);
+    E.video.currentTime = Math.max(0, x.s - 0.6);
+    const p = E.video.play(); if (p && p.catch) p.catch(() => {});
+    clearTimeout(fadeDemoT);
+    fadeDemoT = setTimeout(() => { if (!E.video.paused) E.video.pause(); }, (0.6 + Math.max(sp.in, sp.out) + 0.8) * 1000);
+  }
+  E.video.addEventListener('pause', () => clearTimeout(fadeDemoT));
   E.titleIn.addEventListener('input', () => {
     STYLE.title = E.titleIn.value.slice(0, 120);
     loadFonts(STYLE).then(() => layoutOverlay());
@@ -3044,6 +3077,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   const saved = load();
   if (saved && saved.style && typeof saved.style === 'object'){
     if (LYRIC_ANIMS.includes(saved.style.anim)) STYLE.anim = saved.style.anim;
+    if (saved.style.fadeSpeed in FADE_SPEED) STYLE.fadeSpeed = saved.style.fadeSpeed;
     if (saved.style.font in LYRIC_FONT) STYLE.font = saved.style.font;
     if (saved.style.size in LYRIC_SIZE) STYLE.size = saved.style.size;
     if (saved.style.color in LYRIC_COLOR || isHex(saved.style.color)) STYLE.color = saved.style.color;
