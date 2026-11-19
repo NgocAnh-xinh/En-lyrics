@@ -193,6 +193,7 @@ html.float-open,html.float-open body{overflow:hidden}
 }
 @media (hover:none) and (pointer:coarse){ kbd, .keys-help{display:none} .key-next{padding-right:0} }
 
+
 /* Sheet */
 .sheet{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);display:flex;flex-direction:column;min-width:0}
 .tabs{display:flex;gap:4px;padding:6px 10px 0;border-bottom:1px solid var(--line)}
@@ -216,6 +217,12 @@ html.float-open,html.float-open body{overflow:hidden}
 .lbl{display:inline-flex;align-items:center;min-width:0}
 .row-i{display:flex;align-items:center;gap:6px}
 .row-i > .btn:first-child{flex:1}
+.lyr-box{position:relative;display:flex;flex-direction:column;min-width:0}
+.lyr-box #lyrics{flex:1 1 auto}
+.kbd-done{display:none;position:absolute;right:8px;bottom:8px;z-index:2;gap:4px;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.kbd-done svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.lyr-box.typing .kbd-done{display:inline-flex}
+.lyr-box.typing #lyrics{padding-bottom:52px}
 #lyrics{width:100%;min-height:300px;resize:vertical;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px;line-height:1.7}
 .hint{margin:0;color:var(--muted);font-size:13px;max-width:65ch}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
@@ -335,10 +342,93 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:min(560px,calc(100vw - 32px));padding:10px 16px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:20}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ===== Phone: one screen at a time, video pinned on top, tab bar at the bottom ===== */
+.mtabs,.m-only{display:none}
+@media (max-width:900px){
+  html,body{height:100%;overflow:hidden}
+  .app{height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));padding-block:8px 0;gap:8px;overflow:hidden;--tabbar:62px}
+  .top{flex-wrap:nowrap;gap:10px}
+  .brand{gap:10px;min-width:0}
+  .logo{width:46px}
+  h1{font-size:19px;white-space:nowrap}
+  .top .sub,.save-state,.fname,.btn-t{display:none}
+  .top-act{flex-wrap:nowrap;gap:8px;flex:none}
+  .top-act .btn{min-height:38px;padding:6px 12px;font-size:14px}
+  #resetBtn{padding:6px 10px}
+  #resetBtn .ico{margin-right:0}
+  .steps{display:none}
+  .reset-box{flex:none}
+  .work{display:flex;flex-direction:column;align-items:stretch;flex:1;min-height:0;gap:10px;padding-bottom:calc(var(--tabbar) + 6px)}
+  .stage{display:contents}
+  .dock{flex:none;gap:6px}
+  /* one video size on every screen, so switching tabs never makes the video jump */
+  .player{max-height:36dvh}
+  /* on-screen keyboard up: the whole app fits the visible space above it, without the tab bar */
+  .app.kbd-up{height:var(--vvh,100dvh)}
+  .app.kbd-up .mtabs,.app.kbd-up .dock{display:none}
+  .app.kbd-up .work{padding-bottom:8px}
+  .app.kbd-up[data-mtab="lyrics"] .lyr-box{flex:1 1 auto;min-height:96px}
+  .app.kbd-up[data-mtab="lyrics"] #lyrics{flex:1 1 auto;min-height:0;height:auto;resize:none}
+  .keys-help{display:none}
+  .tapzone,.sheet{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .tapzone{display:flex;flex-direction:column;gap:10px}
+  .tapzone .key{flex:1;min-height:110px}
+  .tapzone .aux{flex:none;flex-direction:row}
+  .tapzone .ebony{min-height:62px}
+  @media (max-height:700px){ .tapzone .key{min-height:84px;padding:14px 16px 12px;gap:4px} .tapzone .ebony{min-height:50px;padding:10px 12px} .tapzone .ebony small{display:none} }
+  .app[data-mtab="tap"] .sheet{display:none}
+  .app:not([data-mtab="tap"]) .tapzone{display:none}
+  /* Lời: the lyrics box or the timing list; the list scrolls inside */
+  .app[data-mtab="lyrics"] .sheet{overflow:hidden}
+  .app[data-mtab="lyrics"] .export{display:none}
+  .app[data-mtab="lyrics"] .panel{flex:1;min-height:0;overflow:auto;padding:12px}
+  .app[data-mtab="lyrics"] #panelCues .cues{flex:none;max-height:none;overflow:visible}
+  /* the pinned video already shows every change: ▶ is the preview */
+  .app #vxTry{display:none}
+  .app[data-mtab="lyrics"] #lyrics{min-height:180px}
+  /* Kiểu chữ and Xuất share the export block */
+  .app[data-mtab="style"] .tabs,.app[data-mtab="style"] .panel,.app[data-mtab="export"] .tabs,.app[data-mtab="export"] .panel{display:none}
+  .app[data-mtab="style"] .x-out,.app[data-mtab="style"] .x-srt{display:none}
+  .app[data-mtab="export"] .x-style{display:none}
+  .app[data-mtab="export"] .m-only{display:block}
+  .app[data-mtab="export"] .vexport{order:1}
+  .app[data-mtab="export"] .x-srt{order:2}
+  .app[data-mtab="export"] h3.x-srt{margin:14px 0 0;padding-top:14px;border-top:1px dashed var(--line);font-size:15px}
+  .export{border-top:none;padding:14px}
+  .vexport{border-top:none;padding-top:0}
+  /* the tab bar */
+  .mtabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:25;min-height:var(--tabbar);padding:4px max(6px,env(safe-area-inset-left,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-right,0px));background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 18px rgba(0,0,0,.06)}
+  .mtabs button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;padding:4px 0;border:none;border-radius:12px;background:none;color:var(--muted);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .mtabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .mtabs svg .fillk{fill:currentColor;stroke:none}
+  .mtabs button[aria-current="page"]{color:var(--felt);background:var(--felt-soft)}
+  .mdot{position:absolute;top:6px;right:calc(50% - 18px);width:9px;height:9px;border-radius:50%;background:var(--felt);box-shadow:0 0 0 2px var(--surface)}
+  .toast{bottom:calc(var(--tabbar,62px) + 14px + env(safe-area-inset-bottom,0px))}
+}
+
+/* ===== Computer: video and keys pinned on the left, one section at a time on the right ===== */
+.d-only{display:none}
+#vxTry{display:none}   /* the video is always in view, so ▶ is the preview */
+.tdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--felt);vertical-align:2px}
+@media (min-width:901px){
+  .tabs .d-only{display:inline-flex;align-items:center;gap:6px}
+  .stage{position:sticky;top:12px}
+  .player{max-height:clamp(220px,calc(100vh - 400px),620px)}
+  .cues{max-height:none;overflow:visible}
+  .sheet[data-stab="lyrics"] .export,.sheet[data-stab="cues"] .export{display:none}
+  .sheet[data-stab="style"] .x-out,.sheet[data-stab="style"] .x-srt{display:none}
+  .sheet[data-stab="export"] .x-style{display:none}
+  .sheet[data-stab="style"] .export,.sheet[data-stab="export"] .export{border-top:none}
+  .sheet[data-stab="style"] .vexport,.sheet[data-stab="export"] .vexport{border-top:none;padding-top:0}
+  .sheet[data-stab="export"] .m-only{display:block}
+  .sheet[data-stab="export"] .vexport{order:1}
+  .sheet[data-stab="export"] .x-srt{order:2}
+  .sheet[data-stab="export"] h3.x-srt{margin:14px 0 0;padding-top:14px;border-top:1px dashed var(--line);font-size:15px}
+}
 </style>
 
 
-</head><body><div class="app">
+</head><body><div class="app" id="app" data-mtab="lyrics">
   <header class="top">
     <div class="brand">
       <div class="logo" role="img" aria-label="Logo Én Piano"></div>
@@ -351,7 +441,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
       <span class="save-state" id="saveState" aria-live="polite"></span>
       <span class="fname" id="fname"></span>
       <input type="file" id="file" class="file-input" accept="video/*,audio/*,.mov,.mp4,.m4v,.3gp,.mp3,.m4a,.wav">
-      <button class="btn ghost" id="resetBtn" type="button" aria-controls="resetBox" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4.5h4.5"/></svg>Làm mới</button>
+      <button class="btn ghost" id="resetBtn" type="button" aria-controls="resetBox" aria-expanded="false" aria-label="Làm mới trang"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4.5h4.5"/></svg><span class="btn-t">Làm mới</span></button>
       <label class="btn" for="file" id="fileBtn">Chọn video</label>
     </div>
   </header>
@@ -431,10 +521,12 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
       </p>
     </section>
 
-    <section class="sheet" aria-label="Lời và thời gian">
+    <section class="sheet" id="sheet" data-stab="cues" aria-label="Lời, thời gian, kiểu chữ và xuất">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="tabLyrics" aria-controls="panelLyrics" aria-selected="false" type="button">Lời bài hát</button>
         <button class="tab" role="tab" id="tabCues" aria-controls="panelCues" aria-selected="true" type="button">Thời gian <span class="count" id="cueCount">0</span></button>
+        <button class="tab d-only" role="tab" id="tabStyle" aria-selected="false" type="button">Kiểu chữ</button>
+        <button class="tab d-only" role="tab" id="tabExport" aria-selected="false" type="button">Xuất <i class="tdot" id="dDot" hidden></i></button>
       </div>
 
       <div class="panel" id="panelLyrics" role="tabpanel" aria-labelledby="tabLyrics" hidden>
@@ -446,8 +538,11 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
           <span class="lbl"><label for="lyrics">Dán lời bài hát, mỗi dòng là một câu</label><button class="info" type="button" aria-expanded="false" aria-controls="lyricsTip" aria-label="Giải thích: cách dán lời"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
           <button class="btn ghost small" id="clearLyricsBtn" type="button">Xoá hết</button>
         </div>
-        <p class="tip" id="lyricsTip" hidden>Dòng trống dùng để ngăn đoạn. Chế độ 2 dòng ghép từng cặp dòng trong một đoạn, hợp với lời kèm bản dịch. Lời có sẵn mốc thời gian kiểu LRC như <code>[00:12.30]</code> sẽ tự điền giờ. Sửa chữ xong bấm lại "Tạo danh sách câu", thời gian đã gõ được giữ theo thứ tự câu.</p>
-        <textarea id="lyrics" spellcheck="false"></textarea>
+        <p class="tip" id="lyricsTip" hidden>Dòng trống dùng để ngăn đoạn. Chế độ 2 dòng ghép từng cặp dòng trong một đoạn, hợp với lời kèm bản dịch. Lời có sẵn mốc thời gian kiểu LRC như <code>[00:12.30]</code> sẽ tự điền giờ. Bấm lại "Tạo danh sách câu" là bắt đầu lại từ đầu: thời gian, kiểu riêng từng câu, tiêu đề và video đã xuất của lời cũ bị xoá (lỡ tay thì bấm "Hoàn tác").</p>
+        <div class="lyr-box" id="lyrBox">
+          <textarea id="lyrics" spellcheck="false"></textarea>
+          <button class="btn primary small kbd-done" id="lyricsDone" type="button" aria-label="Xong, đóng bàn phím"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Xong</button>
+        </div>
         <div class="row">
           <div class="seg" id="groupSeg" role="group" aria-label="Số dòng hiện cùng lúc">
             <button type="button" data-group="1" aria-pressed="true">1 dòng mỗi lần</button>
@@ -476,42 +571,43 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
       </div>
 
       <div class="export">
-        <div class="btns">
+        <h3 class="m-only x-srt">File phụ đề .srt cho CapCut</h3>
+        <div class="btns x-srt">
           <button class="btn primary" id="dlBtn" type="button">Tải file .srt</button>
           <button class="btn" id="copyBtn" type="button">Sao chép SRT</button>
           <span id="dlInfo"><button class="info" type="button" aria-expanded="false" aria-controls="dlHint" aria-label="Giải thích: dùng file .srt"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
         </div>
-        <p class="tip" id="dlHint" hidden>Tệp tải về là .zip chứa sẵn file .srt. Giải nén, rồi trong CapCut trên máy tính chọn Captions → Add Captions → Import file.</p>
-        <p class="hint" id="dlNote" hidden>Trang này không tải tệp trực tiếp được ở đây. Bấm "Sao chép SRT", dán vào Notepad và lưu thành tên-bài.srt (mã hoá UTF-8).</p>
-        <details id="srtDetails"><summary>Xem nội dung SRT</summary><textarea id="srtOut" readonly aria-label="Nội dung file SRT"></textarea></details>
+        <p class="tip x-srt" id="dlHint" hidden>Tệp tải về là .zip chứa sẵn file .srt. Giải nén, rồi trong CapCut trên máy tính chọn Captions → Add Captions → Import file.</p>
+        <p class="hint x-srt" id="dlNote" hidden>Trang này không tải tệp trực tiếp được ở đây. Bấm "Sao chép SRT", dán vào Notepad và lưu thành tên-bài.srt (mã hoá UTF-8).</p>
+        <details class="x-srt" id="srtDetails"><summary>Xem nội dung SRT</summary><textarea id="srtOut" readonly aria-label="Nội dung file SRT"></textarea></details>
 
         <div class="vexport" id="vexport">
-          <h3 class="lbl">Xuất video có sẵn lời<button class="info" type="button" aria-expanded="false" aria-controls="vxTip" aria-label="Giải thích: xuất video có lời"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></h3>
-          <p class="tip" id="vxTip" hidden>Dùng khi làm trên điện thoại: lời được in thẳng vào video, không cần CapCut. Khung video phía trên hiện đúng kiểu chữ và hiệu ứng sẽ xuất; bấm phát để xem thử. Đây là kiểu chung cho mọi câu; muốn chỉnh riêng câu nào, bấm "Kiểu" ở câu đó trong thẻ Thời gian.</p>
-          <div class="presets" id="presets">
+          <h3 class="lbl x-out">Xuất video có sẵn lời<button class="info" type="button" aria-expanded="false" aria-controls="vxTip" aria-label="Giải thích: xuất video có lời"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></h3>
+          <p class="tip x-out" id="vxTip" hidden>Dùng khi làm trên điện thoại: lời được in thẳng vào video, không cần CapCut. Khung video phía trên hiện đúng kiểu chữ và hiệu ứng sẽ xuất; bấm phát để xem thử. Đây là kiểu chung cho mọi câu; muốn chỉnh riêng câu nào, bấm "Kiểu" ở câu đó trong thẻ Thời gian.</p>
+          <div class="presets x-style" id="presets">
             <button class="preset" type="button" data-preset="en1"><b>Mẫu 1: chữ mảnh</b><small>Lời nét mảnh phía trên, tiêu đề thư pháp hiện dần</small></button>
             <button class="preset" type="button" data-preset="en2"><b>Mẫu 2: chữ thư pháp</b><small>Lời viết tay sát mép trên, mờ dần từng câu</small></button>
           </div>
           <div class="opts" id="opts">
-            <div class="opt wide"><span>Hiệu ứng chữ</span>
+            <div class="opt wide x-style"><span>Hiệu ứng chữ</span>
               <div class="seg grid4" data-opt="anim" role="group" aria-label="Hiệu ứng chữ"><button type="button" data-v="none">Không</button><button type="button" data-v="fade">Mờ dần</button><button type="button" data-v="rise">Trồi lên</button><button type="button" data-v="pop">Phóng to</button><button type="button" data-v="type">Đánh máy</button><button type="button" data-v="karaoke">Karaoke</button><button type="button" data-v="dust">Tan biến</button></div></div>
-            <div class="opt wide"><span>Phông chữ</span>
+            <div class="opt wide x-style"><span>Phông chữ</span>
               <div class="seg grid4" data-opt="font" role="group" aria-label="Phông chữ"><button type="button" data-v="bold">Đậm</button><button type="button" data-v="light" class="f-light">Mảnh</button><button type="button" data-v="script" class="f-script">Thư pháp</button><button type="button" data-v="italic" class="f-italic">Nghiêng</button></div></div>
-            <div class="opt wide"><span>Màu chữ <em class="sw-name" id="colorName"></em></span>
+            <div class="opt wide x-style"><span>Màu chữ <em class="sw-name" id="colorName"></em></span>
               <div class="swatches" data-opt="color" id="swatches" role="group" aria-label="Màu chữ"></div></div>
-            <div class="opt wide"><span>Cỡ chữ</span>
+            <div class="opt wide x-style"><span>Cỡ chữ</span>
               <div class="seg" data-opt="size" role="group" aria-label="Cỡ chữ"><button type="button" data-v="s">Nhỏ</button><button type="button" data-v="m">Vừa</button><button type="button" data-v="l">Lớn</button></div></div>
-            <div class="opt wide"><span>Kiểu nổi chữ</span>
+            <div class="opt wide x-style"><span>Kiểu nổi chữ</span>
               <div class="seg grid4" data-opt="fx" role="group" aria-label="Kiểu nổi chữ"><button type="button" data-v="plain">Trơn</button><button type="button" data-v="shadow">Bóng mờ</button><button type="button" data-v="outline">Viền đen</button><button type="button" data-v="box">Nền tối</button></div></div>
-            <div class="opt wide"><span>Vị trí lời</span>
+            <div class="opt wide x-style"><span>Vị trí lời</span>
               <div class="seg grid4" data-opt="pos" role="group" aria-label="Vị trí lời"><button type="button" data-v="top">Sát trên</button><button type="button" data-v="upper">Trên</button><button type="button" data-v="mid">Giữa</button><button type="button" data-v="bottom">Dưới</button></div></div>
-            <div class="opt wide"><span>Tiêu đề đầu video</span>
-              <input type="text" id="titleIn" class="text-in" maxlength="120" placeholder="Ví dụ: Mưa xa nhau - Emily (để trống nếu không cần)" aria-label="Tiêu đề đầu video">
+            <div class="opt wide x-style"><span>Tiêu đề đầu video</span>
+              <input type="text" id="titleIn" class="text-in" maxlength="120" enterkeyhint="done" placeholder="Ví dụ: Mưa xa nhau - Emily (để trống nếu không cần)" aria-label="Tiêu đề đầu video">
               <div class="seg" data-opt="titleDur" role="group" aria-label="Thời gian hiện tiêu đề"><button type="button" data-v="3">Hiện 3 giây</button><button type="button" data-v="5">5 giây</button><button type="button" data-v="8">8 giây</button></div></div>
-            <div class="opt wide"><span class="lbl">Chất lượng xuất<button class="info" type="button" aria-expanded="false" aria-controls="qualityInfo" aria-label="Giải thích: chất lượng xuất"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
+            <div class="opt wide x-out"><span class="lbl">Chất lượng xuất<button class="info" type="button" aria-expanded="false" aria-controls="qualityInfo" aria-label="Giải thích: chất lượng xuất"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
               <div class="seg" data-opt="quality" role="group" aria-label="Chất lượng xuất"><button type="button" data-v="std">Tiêu chuẩn</button><button type="button" data-v="high">Cao</button></div>
               <p class="tip" id="qualityInfo" hidden></p></div>
-            <div class="opt wide" id="hdrOpt" hidden><span class="lbl">Màu video HDR <em class="sw-name" id="hdrKind"></em><button class="info" type="button" aria-expanded="false" aria-controls="hdrTip" aria-label="Giải thích: màu video HDR"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
+            <div class="opt wide x-out" id="hdrOpt" hidden><span class="lbl">Màu video HDR <em class="sw-name" id="hdrKind"></em><button class="info" type="button" aria-expanded="false" aria-controls="hdrTip" aria-label="Giải thích: màu video HDR"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
               <p class="tip" id="hdrTip" hidden>Video này quay ở chế độ HDR. Khi in lời, công cụ xuất ra video thường (không HDR). "Chỉnh màu" chuyển màu HDR sang thường để hình không bị nhạt và phẳng; "Giữ nguyên" để trình duyệt tự vẽ như hiện tại. Nhìn hai ảnh mẫu bên dưới và chọn bản giống video gốc hơn. Muốn giữ HDR, hãy tải file .srt rồi ghép trong CapCut.</p>
               <div class="seg" id="hdrSeg" role="group" aria-label="Màu video HDR"><button type="button" data-hdr="fix">Chỉnh màu</button><button type="button" data-hdr="keep">Giữ nguyên</button></div>
               <button class="btn small" id="hdrCmpBtn" type="button" hidden>Xem ảnh so sánh</button>
@@ -521,28 +617,34 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
               </div>
               <p class="hint" id="hdrNote"></p></div>
           </div>
-          <div class="btns">
+          <div class="btns x-out">
             <button class="btn" id="vxTry" type="button">Xem thử</button>
             <button class="btn primary" id="vxBtn" type="button">Xuất video có lời</button>
             <span id="vxInfo" hidden><button class="info" type="button" aria-expanded="false" aria-controls="vxNote" aria-label="Giải thích: cách xuất video"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></span>
           </div>
-          <div class="vx-prog" id="vxProg" hidden>
+          <div class="vx-prog x-out" id="vxProg" hidden>
             <div class="bar"><i id="vxBar"></i></div>
             <span id="vxText">Đang chuẩn bị…</span>
             <button class="btn ghost" id="vxCancel" type="button">Huỷ</button>
           </div>
-          <div class="vx-result" id="vxResult" hidden>
+          <div class="vx-result x-out" id="vxResult" hidden>
             <video id="vxVideo" controls playsinline></video>
             <p class="hint" id="vxResumeNote" hidden></p>
             <div class="row-i"><button class="btn primary" id="vxSave" type="button">Lưu video</button><button class="info" type="button" aria-expanded="false" aria-controls="vxSaveHint" aria-label="Giải thích: lưu video"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v6"/><circle class="dot" cx="12" cy="7.6" r="1.2"/></svg></button></div>
             <p class="save-status" id="vxSaveStatus" role="status" aria-live="polite" hidden></p>
             <p class="tip" id="vxSaveHint" hidden>Trên iPhone, chọn "Lưu video" trong bảng chia sẻ để đưa video vào ứng dụng Ảnh.</p>
           </div>
-          <p class="hint" id="vxNote">Video chạy hết một lượt trong lúc xuất: bài 4 phút mất khoảng 4 phút. Giữ màn hình sáng và đừng chuyển sang ứng dụng khác.</p>
+          <p class="hint x-out" id="vxNote">Video chạy hết một lượt trong lúc xuất: bài 4 phút mất khoảng 4 phút. Giữ màn hình sáng và đừng chuyển sang ứng dụng khác.</p>
         </div>
       </div>
     </section>
   </main>
+  <nav class="mtabs" id="mtabs" aria-label="Màn hình">
+    <button type="button" data-m="lyrics" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 11h16M4 16h10"/><circle cx="18" cy="17.5" r="2.2"/><path d="M20.2 17.5V9.5"/></svg><span>Lời</span></button>
+    <button type="button" data-m="tap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/><path d="M7.5 4v9h3V4M13.5 4v9h3V4" class="fillk"/></svg><span>Gõ nhịp</span></button>
+    <button type="button" data-m="style"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 19 9 5l5.5 14M5.6 13.8h6.8"/><path d="M15.5 13.5c.6-1.2 1.6-1.8 2.9-1.8 1.8 0 2.6 1 2.6 2.7V19m0-3.4c-.7-.5-1.6-.7-2.6-.7-1.7 0-2.9.8-2.9 2.1 0 1.2.9 2 2.3 2 1.4 0 2.6-.8 3.2-2"/></svg><span>Kiểu chữ</span></button>
+    <button type="button" data-m="export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5M5 19.5h14"/></svg><span>Xuất</span><i class="mdot" id="mDot" hidden></i></button>
+  </nav>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 
@@ -1008,7 +1110,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
 (function(){
   const $ = id => document.getElementById(id);
   const E = {
-    file: $('file'), fileBtn: $('fileBtn'), resetBtn: $('resetBtn'), resetBox: $('resetBox'), fname: $('fname'), steps: $('steps'),
+    app: $('app'), mtabs: $('mtabs'), sheet: $('sheet'), tabStyle: $('tabStyle'), tabExport: $('tabExport'), file: $('file'), fileBtn: $('fileBtn'), resetBtn: $('resetBtn'), resetBox: $('resetBox'), fname: $('fname'), steps: $('steps'),
     player: $('player'), video: $('video'), ovCanvas: $('ovCanvas'), drop: $('drop'),
     playBtn: $('playBtn'), icoPlay: $('icoPlay'), icoPause: $('icoPause'), clockNow: $('clockNow'), clockDur: $('clockDur'),
     speed: $('speed'), blks: $('blks'), seek: $('seek'), track: $('track'), ticks: $('ticks'), seekTip: $('seekTip'),
@@ -1066,7 +1168,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   /* ---------- storage (per-viewer draft) ----------
      Everything the person was doing is written at once when the page is hidden (screen off, app switch),
      so a phone that sleeps or reloads the tab comes back to the same place. */
-  let prevSong = null, workedVideo = null, pendingFresh = null;   // the stashed lyrics of the previous video; the last video that actually opened
+  let prevSong = null, workedVideo = null, pendingFresh = null, mtab = 'tap', stab = 'cues';
+  const STABS = ['lyrics', 'cues', 'style', 'export'];   // the stashed lyrics of the previous video; the last video that actually opened
   let videoMeta = null;     // { name, size, lastModified } of the open video
   let resumeInfo = null;    // where the last session stopped, until this session takes over
   let pendingResumeTime = null, pendingScroll = null;
@@ -1074,8 +1177,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   function uiState(){
     const rb = E.speed.querySelector('[aria-pressed="true"]');
     return {
-      tab: E.panelLyrics.hidden ? 'cues' : 'lyrics',
-      scrollY: Math.round(window.scrollY || 0),
+      mtab, tab: stab,
+      scrollY: (window.matchMedia && matchMedia('(max-width: 900px)').matches) ? 0 : Math.round(window.scrollY || 0),
       editIdx,
       time: hasVideo ? Math.round((E.video.currentTime || 0) * 100) / 100 : (resumeInfo ? resumeInfo.time : 0),
       rate: rb ? +rb.dataset.rate : 1,
@@ -1156,6 +1259,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   }
   function dropExport(){ idbDel('export'); idbDel('exportMeta'); }
   function clearExport(){
+    $('mDot').hidden = true; $('dDot').hidden = true;
     if (lastExport && lastExport.url) URL.revokeObjectURL(lastExport.url);
     lastExport = null;
     E.vxVideo.removeAttribute('src');
@@ -1183,7 +1287,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   function tap(){
     if (exporting) return;
     if (!hasVideo){ toast('Chọn video trước, rồi phát và gõ theo nhạc.'); return; }
-    if (!S.cues.length){ toast('Chưa có lời. Dán lời ở thẻ "Lời bài hát".'); setTab('lyrics'); return; }
+    if (!S.cues.length){ toast('Chưa có lời. Dán lời ở thẻ "Lời bài hát".'); setTab('lyrics'); showScreen('lyrics'); return; }
     if (S.idx >= S.cues.length){ toast('Đã gõ hết các câu. Bấm N để chốt câu cuối, hoặc chọn "Gõ lại từ đây" ở một câu.'); return; }
     const t = E.video.currentTime;
     pushHistory();
@@ -1274,7 +1378,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     const firstUntimed = S.cues.findIndex(c => c.start == null);
     S.idx = firstUntimed === -1 ? S.cues.length : firstUntimed;
     applyStyleUI();
-    setTab('cues'); render(); save();
+    setTab('cues'); showScreen('tap'); render(); save();
     const undoHint = hadWork ? ' Phần cũ đã được xoá, lỡ tay thì bấm "Hoàn tác".' : '';
     if (hasLrc) toast('Đã tạo ' + fresh.length + ' câu, thời gian lấy từ mốc LRC.' + undoHint);
     else toast('Đã tạo ' + fresh.length + ' câu mới. Phát video và gõ Space khi mỗi câu bắt đầu.' + undoHint);
@@ -1367,11 +1471,16 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   }
 
   /* ---------- rendering ---------- */
+  // Right-hand sections: Lời bài hát, Thời gian, and on computers also Kiểu chữ and Xuất
+  // (phones show those two as screens of their own, see setMTab).
   function setTab(name){
-    const lyr = name === 'lyrics';
-    E.tabLyrics.setAttribute('aria-selected', String(lyr));
-    E.tabCues.setAttribute('aria-selected', String(!lyr));
-    E.panelLyrics.hidden = !lyr; E.panelCues.hidden = lyr;
+    if (!STABS.includes(name)) name = 'cues';
+    if (isPhoneLayout() && (name === 'style' || name === 'export')) name = 'cues';
+    stab = name;
+    E.sheet.dataset.stab = name;
+    [['lyrics', E.tabLyrics], ['cues', E.tabCues], ['style', E.tabStyle], ['export', E.tabExport]].forEach(([k, b]) => b.setAttribute('aria-selected', String(k === name)));
+    E.panelLyrics.hidden = name !== 'lyrics'; E.panelCues.hidden = name !== 'cues';
+    if (name === 'export') $('dDot').hidden = true;
     save();
   }
   function setGroupUI(){
@@ -1582,10 +1691,20 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     lastActive = -2; updateActive();
   }
   function keepInView(row){
-    const list = E.cues;
-    if (!row || list.scrollHeight <= list.clientHeight + 1) return;
-    const top = row.offsetTop, bottom = top + row.offsetHeight;
-    if (top < list.scrollTop || bottom > list.scrollTop + list.clientHeight) list.scrollTop = Math.max(0, top - list.clientHeight / 3);
+    if (!row) return;
+    let box = E.cues;
+    while (box && box !== document.body){
+      const ov = getComputedStyle(box).overflowY;
+      if ((ov === 'auto' || ov === 'scroll') && box.scrollHeight > box.clientHeight + 1) break;
+      box = box.parentElement;
+    }
+    if (!box || box === document.body){
+      const r = row.getBoundingClientRect();
+      if (r.top < 60 || r.bottom > window.innerHeight - 20) window.scrollTo({ top: Math.max(0, window.scrollY + r.top - window.innerHeight / 3) });
+      return;
+    }
+    const b = box.getBoundingClientRect(), r = row.getBoundingClientRect();
+    if (r.top < b.top || r.bottom > b.bottom) box.scrollTop = Math.max(0, box.scrollTop + (r.top - b.top) - box.clientHeight / 3);
   }
   function updateActive(){
     const t = E.video.currentTime || 0;
@@ -1713,7 +1832,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     clearExport();
     showFreshNote();
     applyStyleUI();
-    setTab(S.sample ? 'cues' : 'lyrics');
+    setTab('lyrics');
+    showScreen('lyrics');
     render(); save();
   }
   E.reuseBtn.addEventListener('click', () => {
@@ -1730,9 +1850,119 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     prevSong = null; E.freshNote.hidden = true;
     clearedLyrics = null; syncClearBtn();
     setGroupUI(); applyStyleUI();
-    setTab('cues'); render(); save();
+    setTab('cues'); showScreen('tap'); render(); save();
     toast('Đã dùng lại lời cũ, thời gian được xoá. Phát video rồi gõ nhịp lại từ câu 1.');
   });
+  /* ---------- phone layout: four screens and a tab bar ---------- */
+  const MQ = window.matchMedia ? window.matchMedia('(max-width: 900px)') : null;
+  const isPhoneLayout = () => !!(MQ && MQ.matches);
+  const MTABS = ['tap', 'lyrics', 'style', 'export'];
+  function setMTab(t, quiet){
+    if (!MTABS.includes(t)) t = 'tap';
+    if (mtab !== t && isPhoneLayout() && isTextField(document.activeElement)) document.activeElement.blur();
+    mtab = t; E.app.dataset.mtab = t;
+    E.mtabs.querySelectorAll('button[data-m]').forEach(b => { if (b.dataset.m === t) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    if (t === 'export') $('mDot').hidden = true;
+    if (t === 'lyrics' && stab !== 'lyrics' && stab !== 'cues') setTab('cues');
+    requestAnimationFrame(layoutOverlay);
+    if (!quiet) save();
+  }
+  E.mtabs.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (!b) return;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    setMTab(b.dataset.m);
+  });
+  const isTextField = el => !!(el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && el.type === 'text')));
+  /* Closing the keyboard. On a phone the keyboard of a multi-line box has no "Done" key (Return makes a new line)
+     and tapping elsewhere on a web page does not close it, so: a "Xong" button floats in the corner of the lyrics
+     box while you type (floating, so nothing on the page moves when it appears), a tap on any empty spot closes the
+     keyboard, and Return in the title field means done. */
+  const touchUI = () => isPhoneLayout() || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+  let lyrDoneT = 0;
+  E.lyrics.addEventListener('focus', () => { clearTimeout(lyrDoneT); if (touchUI()) $('lyrBox').classList.add('typing'); });
+  E.lyrics.addEventListener('blur', () => { clearTimeout(lyrDoneT); lyrDoneT = setTimeout(() => { if (document.activeElement !== E.lyrics) $('lyrBox').classList.remove('typing'); }, 300); });
+  $('lyricsDone').addEventListener('mousedown', e => e.preventDefault());   // keep the box focused until the tap is done
+  $('lyricsDone').addEventListener('click', () => { E.lyrics.blur(); });
+  E.titleIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing){ e.preventDefault(); E.titleIn.blur(); } });
+  let tapStart = null;
+  let kbClosedAt = 0;   // a tap that only closed the keyboard does not also play or pause the video
+  const INTERACTIVE = 'input, textarea, select, button, a, label, summary, [role="button"], [role="tab"], [contenteditable="true"], .seek, .rail';
+  document.addEventListener('pointerdown', e => {
+    tapStart = (e.pointerType !== 'mouse' && isTextField(document.activeElement)) ? { x: e.clientX, y: e.clientY, t: e.target } : null;
+  }, true);
+  document.addEventListener('pointerup', e => {
+    const st = tapStart; tapStart = null;
+    if (!st || Math.hypot(e.clientX - st.x, e.clientY - st.y) > 10) return;    // a scroll, not a tap
+    const a = document.activeElement;
+    if (!isTextField(a) || a.contains(st.t) || (st.t.closest && st.t.closest(INTERACTIVE))) return;
+    kbClosedAt = performance.now();
+    a.blur();
+  }, true);
+  /* The on-screen keyboard. Phones push the whole page up to uncover the field being typed in, and because the
+     layout moves at the moment of the tap the push overshoots: the field ends up above the screen and only the
+     bottom of the page shows. So nothing moves on the tap itself (the phone, or the app showing the page, then
+     scrolls just enough), and once the keyboard is really up the app is sized to the space above it, without the
+     video and the tab bar, the page is held at the top, and the field is brought into view inside its own pane.
+     Some apps shrink the whole page for the keyboard instead of covering part of it, so "keyboard up" is judged
+     against the height the page had before typing, not only against the full page height. */
+  const VV = window.visualViewport || null;
+  let kbRaf = 0, baseH = VV ? VV.height : 0, baseW = VV ? VV.width : 0;
+  function fitKeyboard(){
+    kbRaf = 0;
+    if (!VV) return;
+    const phone = isPhoneLayout(), zoomed = VV.scale > 1.05;
+    const field = isTextField(document.activeElement) && E.app.contains(document.activeElement) ? document.activeElement : null;
+    if (!field && !zoomed){ baseH = VV.height; baseW = VV.width; }   // the height with no keyboard
+    const before = Math.abs(VV.width - baseW) < 40 ? baseH : 0;      // turned the phone while typing: no reference
+    const fullH = Math.max(before, document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    const open = phone && !!field && !zoomed && fullH - VV.height > 120;
+    if (open){
+      if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
+      const padTop = parseFloat(getComputedStyle(document.documentElement).paddingTop) || 0;
+      const y = Math.max(0, Math.round(VV.offsetTop || 0));
+      E.app.style.setProperty('--vvh', Math.max(240, Math.round(VV.height - padTop)) + 'px');
+      E.app.style.transform = y ? 'translateY(' + y + 'px)' : '';
+      if (!E.app.classList.contains('kbd-up')){
+        E.app.classList.add('kbd-up');
+        requestAnimationFrame(() => { revealField(field); requestAnimationFrame(layoutOverlay); });
+      }
+    } else if (E.app.classList.contains('kbd-up')){
+      E.app.classList.remove('kbd-up');
+      E.app.style.transform = ''; E.app.style.removeProperty('--vvh');
+      if (phone && !zoomed && (window.scrollY || window.scrollX)) window.scrollTo(0, 0);
+      requestAnimationFrame(layoutOverlay);
+    } else if (phone && !zoomed && !field && (window.scrollY || window.scrollX)){
+      window.scrollTo(0, 0);   // the page never scrolls on a phone; undo anything left over from the keyboard
+    }
+  }
+  const queueFit = () => { if (!kbRaf) kbRaf = requestAnimationFrame(fitKeyboard); };
+  // Show the field inside the pane that scrolls it (only that pane moves, never the page).
+  function revealField(el){
+    if (!el || !el.isConnected) return;
+    let box = el.parentElement;
+    while (box && box !== E.app){
+      const ov = getComputedStyle(box).overflowY;
+      if ((ov === 'auto' || ov === 'scroll') && box.scrollHeight > box.clientHeight + 1) break;
+      box = box.parentElement;
+    }
+    if (!box || box === E.app) return;
+    const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
+    if (r.top < b.top + 4 || r.height > b.height) box.scrollTop += r.top - b.top - 8;
+    else if (r.bottom > b.bottom - 4) box.scrollTop += r.bottom - b.bottom + 8;
+  }
+  if (VV){
+    VV.addEventListener('resize', queueFit);
+    VV.addEventListener('scroll', queueFit);
+  }
+  window.addEventListener('scroll', queueFit, { passive: true });
+  window.addEventListener('resize', queueFit);
+  E.app.addEventListener('focusin', () => { queueFit(); setTimeout(queueFit, 350); setTimeout(queueFit, 700); });
+  E.app.addEventListener('focusout', () => setTimeout(queueFit, 400));
+  // Jump to the screen that shows what just happened (phones only).
+  function showScreen(t){ if (isPhoneLayout() && mtab !== t) setMTab(t); }
+  if (MQ && MQ.addEventListener) MQ.addEventListener('change', () => { if (isPhoneLayout() && (stab === 'style' || stab === 'export')){ setMTab(stab); setTab('cues'); } requestAnimationFrame(layoutOverlay); });
+
   /* ---------- "Làm mới": back to a first visit ---------- */
   function openReset(open){
     E.resetBox.hidden = !open;
@@ -1771,7 +2001,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     setDrop('');
     E.fname.textContent = ''; E.fname.title = '';
     setGroupUI(); applyStyleUI(); syncClearBtn();
-    setTab('cues'); render(); saveNow();
+    setTab('lyrics'); showScreen('lyrics'); render(); saveNow();
     window.scrollTo(0, 0);
     toast(all ? 'Đã làm mới trang và đưa kiểu chữ về mặc định. Chọn video để bắt đầu.' : 'Đã làm mới trang. Chọn video để bắt đầu bài mới.');
   }
@@ -1888,7 +2118,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   E.video.addEventListener('pause', () => { E.icoPlay.toggleAttribute('hidden', false); E.icoPause.toggleAttribute('hidden', true); E.playBtn.setAttribute('aria-label', 'Phát'); updateActive(); });
   E.video.addEventListener('seeked', () => { if (E.video.paused) updateActive(); });
   E.video.addEventListener('timeupdate', () => { if (E.video.paused) updateActive(); });
-  E.video.addEventListener('click', togglePlay);
+  E.video.addEventListener('click', () => { if (performance.now() - kbClosedAt > 700) togglePlay(); });
   // Remember the playback position: on pause/seek, and every few seconds while playing.
   let lastPosSave = 0;
   E.video.addEventListener('pause', save);
@@ -1938,6 +2168,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
 
   E.tabLyrics.addEventListener('click', () => setTab('lyrics'));
   E.tabCues.addEventListener('click', () => setTab('cues'));
+  E.tabStyle.addEventListener('click', () => setTab('style'));
+  E.tabExport.addEventListener('click', () => setTab('export'));
   E.groupSeg.addEventListener('click', e => {
     const b = e.target.closest('button[data-group]'); if (!b) return;
     S.group = +b.dataset.group === 2 ? 2 : 1; setGroupUI(); save();
@@ -2117,6 +2349,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   function previewPlay(){
     if (!hasVideo){ toast('Chọn video trước đã.'); return; }
     if (exporting) return;
+    if (isPhoneLayout() && mtab === 'export') setMTab('style');
     const cur = E.video.currentTime || 0;
     let from = cur;
     if (STYLE.title.trim() && cur < (+STYLE.titleDur || 5)) from = 0;
@@ -2492,6 +2725,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
       const d = new Date(restoredAt);
       E.vxResumeNote.textContent = 'Video xuất lúc ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ' ngày ' + d.getDate() + '/' + (d.getMonth() + 1) + ' chưa được lưu. Bấm "Lưu video" để lưu, hoặc xuất lại nếu bạn đã sửa lời.';
       E.vxResumeNote.hidden = false;
+      if (mtab !== 'export') $('mDot').hidden = false;   // a dot on "Xuất" until it is seen
+      if (stab !== 'export') $('dDot').hidden = false;
       return;
     }
     E.vxResumeNote.hidden = true;
@@ -2499,6 +2734,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     if (blob.size <= EXPORT_KEEP_MAX){ const at = Date.now(); idbDel('exportMeta'); idbPut('export', { blob, at }).then(ok => { if (ok) idbPut('exportMeta', { size: blob.size, at }); }); }
     else dropExport();
     S.exported = true; renderSteps();
+    if (isPhoneLayout() && mtab !== 'export') $('mDot').hidden = false;
+    if (!isPhoneLayout() && stab !== 'export') $('dDot').hidden = false;
     toast(msg);
     try { E.vxResult.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
   }
@@ -2757,16 +2994,18 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     if (Number.isInteger(ui.editIdx) && ui.editIdx >= 0 && ui.editIdx < S.cues.length) editIdx = ui.editIdx;
     const rb = E.speed.querySelector('[data-rate="' + ui.rate + '"]');
     if (rb) E.speed.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === rb)));
-    if (typeof ui.scrollY === 'number' && ui.scrollY > 0) pendingScroll = ui.scrollY;
+    if (typeof ui.scrollY === 'number' && ui.scrollY > 0 && !isPhoneLayout()) pendingScroll = ui.scrollY;
   }
   const typedLyrics = S.sample && E.lyrics.value !== SAMPLE_LYRICS;
+  const noSong = S.sample || !S.cues.length;   // no song of your own yet → start at the lyrics
   setGroupUI(); applyStyleUI(); syncClearBtn();
+  setMTab(noSong ? 'lyrics' : (ui && MTABS.includes(ui.mtab) ? ui.mtab : 'tap'), true);
   if (saved && saved.prev && typeof saved.prev.lyrics === 'string' && Array.isArray(saved.prev.cues) && !S.sample && !S.cues.length){
     prevSong = { name: String(saved.prev.name || ''), lyrics: saved.prev.lyrics, group: saved.prev.group === 2 ? 2 : 1, title: String(saved.prev.title || ''),
       cues: saved.prev.cues.map(c => ({ text: String(c && c.text || ''), p: c && Number.isInteger(c.p) ? c.p : undefined, st: cleanSt(c && c.st) || null })) };
     showFreshNote();
   }
-  setTab((ui && ui.tab === 'lyrics') || typedLyrics ? 'lyrics' : 'cues');
+  setTab(typedLyrics || noSong ? 'lyrics' : (ui && STABS.includes(ui.tab) ? ui.tab : 'cues'));
   render();
   if (pendingScroll) { const y = pendingScroll; requestAnimationFrame(() => window.scrollTo(0, y)); }
   (async () => {
