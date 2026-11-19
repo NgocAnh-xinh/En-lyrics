@@ -1192,9 +1192,9 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     tip.hidden = !open;
     b.setAttribute('aria-expanded', String(open));
   });
-  function toast(msg){
+  function toast(msg, ms){
     E.toast.textContent = msg; E.toast.hidden = false;
-    clearTimeout(toastT); toastT = setTimeout(() => { E.toast.hidden = true; }, 3800);
+    clearTimeout(toastT); toastT = setTimeout(() => { E.toast.hidden = true; }, ms || 3800);
   }
 
   /* ---------- storage (per-viewer draft) ----------
@@ -2107,11 +2107,20 @@ function drawTitle(ctx, text, t, W, H, hold, color){
       setDrop('error', msg, 'Mã lỗi ' + (code == null ? '?' : code) + ' · ' + (f.type || 'không rõ loại') + (r.tags.length ? ' · ' + r.tags.join(', ') : '') + ' · ' + Math.round(f.size / 1048576) + ' MB · ' + tried.join(' '));
     });
   }
+  // Some phone browsers only read a video after a tap. The tap starts reading without playing: in a browser that
+  // can only play full screen, playing here would open its own player on top of the page.
   E.dropTap.addEventListener('click', () => {
     setDrop('loading');
-    let p;
-    try { p = E.video.play(); } catch (e) {}
-    if (p && p.then) p.then(() => { E.video.pause(); try { E.video.currentTime = 0; } catch (e) {} }).catch(() => {});
+    try { E.video.load(); } catch (e) {}
+    armTapHint(loadToken);
+  });
+  // The browser built into some apps (Claude, Zalo, Facebook…) on iPhone plays video only full screen in its own
+  // player, where the lyrics and the tap keys cannot be used. Say so once it happens, and what to do instead.
+  let fsWarned = 0;
+  E.video.addEventListener('webkitendfullscreen', () => {
+    if (Date.now() - fsWarned < 20000) return;
+    fsWarned = Date.now();
+    toast('Trình duyệt trong ứng dụng này chỉ phát video toàn màn hình, nên không xem lời và gõ nhịp được ở đây. Hãy mở trang bằng Safari.', 12000);
   });
   E.video.addEventListener('loadedmetadata', () => {
     clearTimeout(tapT);
