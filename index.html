@@ -339,7 +339,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;width:max-conte
 .vx-result video{width:100%;max-height:380px;background:var(--video-bg);border-radius:10px}
 .exporting .tapzone,.exporting .transport,.exporting .cues,.exporting .cue-tools,.exporting .tabs,.exporting .btns,.exporting .opts,.exporting .top-act,.exporting .keys-help{pointer-events:none;opacity:.45}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:min(560px,calc(100vw - 32px));padding:10px 16px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:20}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:min(560px,calc(100vw - 32px));padding:10px 16px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:20;pointer-events:none}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 /* ===== Phone: one screen at a time, video pinned on top, tab bar at the bottom ===== */
@@ -823,6 +823,23 @@ function lyricAt(tl, texts, t){
     joinedIn: !!(prev && Math.abs(prev.e - x.s) < 0.05),
     joinedOut: !!(next && Math.abs(next.s - x.e) < 0.05) };
 }
+// "Mờ dần": a line stays fully shown until its end, then fades out over FADE_OUT seconds while the next line
+// fades in (a cross-dissolve). Because the fade comes after the end, it also shows while lines are being tapped live,
+// when a line's end is only known at the moment the next one is tapped.
+const FADE_OUT = 0.6;
+function lyricLeaving(tl, texts, t, st){
+  let x = null;
+  for (let j = 0; j < tl.length; j++){ const y = tl[j]; if (t >= y.e && t < y.e + FADE_OUT && (!x || y.e > x.e)) x = y; }
+  if (!x) return null;
+  const it = texts[x.i], own = (it && it.st) || null;
+  if (((own && own.anim) || st.anim) !== 'fade') return null;
+  return { text: typeof it === 'string' ? it : it.text, st: own, s: x.s, e: x.e, leaving: true, joinedIn: false, joinedOut: false };
+}
+// Everything lyric-wise at time t: the line fading out (if any) under the current line.
+function drawLyricsAt(ctx, tl, texts, t, W, H, st){
+  drawLyrics(ctx, lyricLeaving(tl, texts, t, st), t, W, H, st);
+  drawLyrics(ctx, lyricAt(tl, texts, t), t, W, H, st);
+}
 const clamp01 = v => Math.max(0, Math.min(1, v));
 const easeOut = p => 1 - Math.pow(1 - p, 3);
 const easeBack = p => { const c = 1.70158; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
@@ -1030,16 +1047,17 @@ function drawLyrics(ctx, L, t, W, H, st){
   }
   const age = t - L.s, left = L.e - t;
   let alpha = 1, dy = 0, scale = 1;
-  // Soft fade: every line eases in over about 1 s and out over 0.9 s, even when the next line follows at once.
-  // A short line fades faster so it is still fully shown for at least 40% of its time.
+  // Soft fade: a line eases in over about 1 s (faster on a short line) and stays fully shown until its end;
+  // after the end it eases out over FADE_OUT while the next line comes in (see lyricLeaving).
   if (anim === 'fade'){
-    const span = Math.max(0.01, L.e - L.s), fin = Math.min(1.0, span * 0.32), fout = Math.min(0.9, span * 0.28);
-    alpha = Math.min(easeInOut(clamp01(age / fin)), easeInOut(clamp01(left / fout)));
+    const span = Math.max(0.01, L.e - L.s), fin = Math.min(1.0, span * 0.4);
+    alpha = easeInOut(clamp01(age / fin));
+    if (L.leaving) alpha = Math.min(alpha, 1 - easeInOut(clamp01((t - L.e) / FADE_OUT)));
   }
   else if (anim === 'rise'){ const p = clamp01(age / 0.32); alpha = p; dy = (1 - easeOut(p)) * size * 0.6; }
   else if (anim === 'pop'){ alpha = clamp01(age / 0.12); scale = 0.82 + 0.18 * easeBack(clamp01(age / 0.28)); }
   else if (anim === 'karaoke' || anim === 'type') alpha = L.joinedIn ? 1 : clamp01(age / 0.12);
-  if (anim !== 'none' && !L.joinedOut) alpha = Math.min(alpha, clamp01(left / 0.2));
+  if (anim !== 'none' && anim !== 'fade' && !L.joinedOut) alpha = Math.min(alpha, clamp01(left / 0.2));
   if (alpha <= 0) return;
 
   ctx.save();
@@ -2365,7 +2383,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     ovCtx.clearRect(0, 0, c.width, c.height);
     if (!hasVideo || exporting) return;
     drawTitle(ovCtx, STYLE.title, t, c.width, c.height, STYLE.titleDur, colorOf(STYLE.color));
-    drawLyrics(ovCtx, lyricAt(TL, TEXTS, t), t, c.width, c.height, STYLE);
+    drawLyricsAt(ovCtx, TL, TEXTS, t, c.width, c.height, STYLE);
   }
   // Ask the browser for the faces in use, then redraw once they arrive.
   function loadFonts(st){
@@ -2749,7 +2767,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
           sample.drawWithFit(c2, { fit: 'fill' });
           if (tm) hdrToSdrInPlace(c2, W, H, tm);
           drawTitle(c2, st.title, t, W, H, st.titleDur, colorOf(st.color));
-          drawLyrics(c2, lyricAt(tl, texts, t), t, W, H, st);
+          drawLyricsAt(c2, tl, texts, t, W, H, st);
           return cv;
         }
       },
@@ -2869,7 +2887,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
       c2.drawImage(E.video, 0, 0, W, H);
       if (tm) hdrToSdrInPlace(c2, W, H, tm);
       drawTitle(c2, st.title, t, W, H, st.titleDur, colorOf(st.color));
-      drawLyrics(c2, lyricAt(tl, texts, t), t, W, H, st);
+      drawLyricsAt(c2, tl, texts, t, W, H, st);
     };
     draw();
     const vStream = cv.captureStream(plan.fps);
