@@ -746,7 +746,7 @@ function computeTimeline(cues, offset, dur, lastLen){
     else e = s + lastLen;
     if (dur) e = Math.min(e, dur);
     if (e < s + 0.2) e = s + 0.2;
-    out.push({ i, s, e });
+    out.push({ i, s, e, guess: c.end == null && !nxt });
   });
   return out;
 }
@@ -825,26 +825,31 @@ function lyricAt(tl, texts, t){
   if (k < 0) return null;
   const x = tl[k], prev = tl[k - 1], next = tl[k + 1];
   const it = texts[x.i];   // a plain string, or { text, st } where st holds this line's own style
-  return { text: typeof it === 'string' ? it : it.text, st: (it && it.st) || null, s: x.s, e: x.e,
+  return { text: typeof it === 'string' ? it : it.text, st: (it && it.st) || null, s: x.s, e: x.e, guess: !!x.guess,
     joinedIn: !!(prev && Math.abs(prev.e - x.s) < 0.05),
     joinedOut: !!(next && Math.abs(next.s - x.e) < 0.05) };
 }
-// "Mờ dần": a line stays fully shown until its end, then fades out over FADE_OUT seconds while the next line
-// fades in (a cross-dissolve). Because the fade comes after the end, it also shows while lines are being tapped live,
-// when a line's end is only known at the moment the next one is tapped.
-// How long a line takes to fade in, and to fade out after its end ("Tốc độ chuyển câu").
-const FADE_SPEED = { fast: { in: 0.5, out: 0.45 }, mid: { in: 1.0, out: 0.8 }, slow: { in: 1.5, out: 1.3 } };
+/* "Mờ dần", timed like the reference covers (measured frame by frame): a line fades in from the moment it was
+   tapped, stays, then fades out and is gone a moment BEFORE the next line starts, leaving a short empty beat.
+   Two lines are never on screen together. "Tốc độ chuyển câu" picks the timing; "slow" matches the user's own
+   "Mùa xa nhau" cover (in ~0.5-0.6 s, out ~1 s, ~0.4 s apart). */
+const FADE_SPEED = {
+  fast: { in: 0.35, out: 0.4, gap: 0.25 },
+  mid:  { in: 0.5,  out: 0.6, gap: 0.4 },
+  slow: { in: 0.6,  out: 1.0, gap: 0.45 }
+};
 const fadeSpeed = st => FADE_SPEED[st && st.fadeSpeed] || FADE_SPEED.slow;
-// Lines that have ended but are still fading out, oldest first. A fade-out never runs longer than about
-// half of the line that follows, so a short next line is not drawn over a ghost for its whole length.
-function lyricsLeaving(tl, texts, t, st){
+const LIVE_HANDOVER = 0.25;
+// Lines that already ended but still fade out after their end. That happens only when the end could not be
+// known in advance: a line cut by a tap just now while tapping live (live.e), or a last line whose end is a guess.
+function lyricsLeaving(tl, texts, t, st, live){
   const out = [], sp = fadeSpeed(st);
   for (let j = 0; j < tl.length; j++){
     const x = tl[j];
     if (t < x.e) continue;
-    let fo = sp.out;
-    const nx = tl[j + 1];
-    if (nx && nx.s < x.e + fo) fo = Math.min(fo, Math.max(0.3, (nx.e - nx.s) * 0.6));
+    const cut = !!(live && Math.abs(x.e - live.e) < 0.02);
+    if (!cut && !x.guess) continue;
+    const fo = cut && live.next ? LIVE_HANDOVER : sp.out;
     if (t >= x.e + fo) continue;
     const it = texts[x.i], own = (it && it.st) || null;
     if (((own && own.anim) || st.anim) !== 'fade') continue;
@@ -852,10 +857,14 @@ function lyricsLeaving(tl, texts, t, st){
   }
   return out;
 }
-// Everything lyric-wise at time t: the lines fading out (if any) under the current line.
-function drawLyricsAt(ctx, tl, texts, t, W, H, st){
-  for (const L of lyricsLeaving(tl, texts, t, st)) drawLyrics(ctx, L, t, W, H, st);
-  drawLyrics(ctx, lyricAt(tl, texts, t), t, W, H, st);
+// Everything lyric-wise at time t. While tapping live, a line tapped just now waits for the one it cut off
+// to clear (a quarter of a second) so the two never overlap; the saved timing and the export are not affected.
+function drawLyricsAt(ctx, tl, texts, t, W, H, st, live){
+  const gone = lyricsLeaving(tl, texts, t, st, live);
+  for (const L of gone) drawLyrics(ctx, L, t, W, H, st);
+  const cur = lyricAt(tl, texts, t);
+  if (cur && live && live.next && Math.abs(cur.s - live.e) < 0.02) cur.delay = LIVE_HANDOVER;
+  drawLyrics(ctx, cur, t, W, H, st);
 }
 const clamp01 = v => Math.max(0, Math.min(1, v));
 const easeOut = p => 1 - Math.pow(1 - p, 3);
@@ -1064,12 +1073,18 @@ function drawLyrics(ctx, L, t, W, H, st){
   }
   const age = t - L.s, left = L.e - t;
   let alpha = 1, dy = 0, scale = 1;
-  // Soft fade: a line eases in (at most over half of its length) and stays fully shown until its end;
-  // after the end it eases out while the next line comes in (see lyricsLeaving). Speed: st.fadeSpeed.
+  // Fade (see FADE_SPEED): in from the start; out so that the line is gone a short beat before the next one
+  // starts (right at its end when a pause follows). Short lines fade faster. Linear, like a video editor's fade.
   if (anim === 'fade'){
-    const sp = fadeSpeed(st), span = Math.max(0.01, L.e - L.s), fin = Math.min(sp.in, span * 0.5);
-    alpha = easeInOut(clamp01(age / fin));
-    if (L.leaving) alpha = Math.min(alpha, 1 - easeInOut(clamp01((t - L.e) / (L.fo || sp.out))));
+    const sp = fadeSpeed(st), span = Math.max(0.01, L.e - L.s);
+    const fi = Math.min(sp.in, span * 0.3);
+    let a = clamp01((age - (L.delay || 0)) / fi);
+    if (L.leaving) a = Math.min(a, 1 - clamp01((t - L.e) / L.fo));
+    else if (!L.guess){
+      const gap = L.joinedOut ? Math.min(sp.gap, span * 0.12) : 0, fo = Math.min(sp.out, span * 0.3);
+      a = Math.min(a, clamp01((left - gap) / fo));
+    }
+    alpha = a;
   }
   else if (anim === 'rise'){ const p = clamp01(age / 0.32); alpha = p; dy = (1 - easeOut(p)) * size * 0.6; }
   else if (anim === 'pop'){ alpha = clamp01(age / 0.12); scale = 0.82 + 0.18 * easeBack(clamp01(age / 0.28)); }
@@ -1351,6 +1366,10 @@ function drawTitle(ctx, text, t, W, H, hold, color){
   }
 
   /* ---------- actions ---------- */
+  // The line whose end was tapped just now while playing: it could not fade out ahead of the tap, so the
+  // preview lets it fade right after (cleared on any jump in the video).
+  let liveCut = null;
+  E.video.addEventListener('seeking', () => { liveCut = null; });
   function tap(){
     if (exporting) return;
     if (!hasVideo){ toast('Chọn video trước, rồi phát và gõ theo nhạc.'); return; }
@@ -1360,7 +1379,8 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     pushHistory();
     if (S.sample && S.idx === 0) S.cues.forEach(c => { c.start = null; c.end = null; });
     const prev = S.cues[S.idx - 1];
-    if (prev && prev.start != null && (prev.end == null || prev.end > t)) prev.end = t;
+    liveCut = null;
+    if (prev && prev.start != null && (prev.end == null || prev.end > t)){ prev.end = t; liveCut = { e: Math.max(0, t + S.offset), next: true }; }
     const c = S.cues[S.idx];
     c.start = t; c.end = null;
     const done = S.idx;
@@ -1379,6 +1399,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     if (t <= c.start + 0.05){ toast('Thời điểm kết thúc phải sau lúc câu bắt đầu.'); return; }
     pushHistory();
     c.end = t;
+    liveCut = { e: t + S.offset, next: false };
     render(); save();
     toast('Đã chốt câu ' + S.idx + ' kết thúc ở ' + tcShort(t + S.offset) + '.');
   }
@@ -2401,7 +2422,7 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     ovCtx.clearRect(0, 0, c.width, c.height);
     if (!hasVideo || exporting) return;
     drawTitle(ovCtx, STYLE.title, t, c.width, c.height, STYLE.titleDur, colorOf(STYLE.color));
-    drawLyricsAt(ovCtx, TL, TEXTS, t, c.width, c.height, STYLE);
+    drawLyricsAt(ovCtx, TL, TEXTS, t, c.width, c.height, STYLE, liveCut);
   }
   // Ask the browser for the faces in use, then redraw once they arrive.
   function loadFonts(st){
@@ -2490,11 +2511,11 @@ function drawTitle(ctx, text, t, W, H, hold, color){
     if (!hasVideo || exporting || !E.video.paused || TL.length < 2) return;
     const cur = E.video.currentTime || 0;
     const x = TL.find((y, k) => k > 0 && y.s > cur + 0.3) || TL[1];
-    const sp = fadeSpeed(STYLE);
-    E.video.currentTime = Math.max(0, x.s - 0.6);
+    const sp = fadeSpeed(STYLE), lead = sp.out + sp.gap + 0.5;
+    E.video.currentTime = Math.max(0, x.s - lead);
     const p = E.video.play(); if (p && p.catch) p.catch(() => {});
     clearTimeout(fadeDemoT);
-    fadeDemoT = setTimeout(() => { if (!E.video.paused) E.video.pause(); }, (0.6 + Math.max(sp.in, sp.out) + 0.8) * 1000);
+    fadeDemoT = setTimeout(() => { if (!E.video.paused) E.video.pause(); }, (lead + sp.in + 0.9) * 1000);
   }
   E.video.addEventListener('pause', () => clearTimeout(fadeDemoT));
   E.titleIn.addEventListener('input', () => {
